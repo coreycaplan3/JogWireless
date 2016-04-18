@@ -1,0 +1,16 @@
+Insertion Order:
+
+1. Customer
+
+2. Account
+
+3. Phone Number
+
+4. Phone Model
+
+5. Store
+
+6. Phone Product
+
+7. Sold
+8. 
