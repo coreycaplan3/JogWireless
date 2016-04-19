@@ -1,8 +1,7 @@
 package forms;
 
 import database.DatabaseInitializer;
-import interfaces.BaseInterface;
-import interfaces.CustomerInStoreInterface;
+import interfaces.*;
 import validation.FormValidation;
 
 import java.util.Scanner;
@@ -16,7 +15,6 @@ public class MainForm {
         System.out.println("Welcome to Corey\'s CSE 341 Project. To begin, please enter a username or password");
         String username;
         String password;
-        String userResponse;
         Scanner scanner = new Scanner(System.in);
         while (true) {
             System.out.print("Username: ");
@@ -32,16 +30,16 @@ public class MainForm {
         }
         while (true) {
             System.out.println("Select an interface to use:");
-            int x = 100;
-            System.out.printf("%-45s %d\n", "A customer in a store", 1);
-            System.out.printf("%-45s %d\n", "A sales clerk/cashier in a store", 2);
-            System.out.printf("%-45s %d\n", "A manager of a store", 3);
-            System.out.printf("%-45s %d\n", "A customer trying to get started with Jog", 4);
-            System.out.printf("%-45s %d\n", "A customer changing account information", 5);
-            System.out.printf("%-45s %d\n", "A business trying to get started with Jog", 6);
-            System.out.printf("%-45s %d\n", "A business changing account information", 7);
-            System.out.printf("%-45s %d\n", "Quit this program", -1);
-            int response = FormValidation.getNumericInput();
+            System.out.printf("%-75s %d\n", "A residential customer walking into in a store", 1);
+            System.out.printf("%-75s %d\n", "A sales clerk/cashier working in a store", 2);
+            System.out.printf("%-75s %d\n", "An accountant or CFO looking at financial information", 3);
+            System.out.printf("%-75s %d\n", "A residential customer trying to get started with Jog online", 4);
+            System.out.printf("%-75s %d\n", "A business trying to get started with Jog", 5);
+            System.out.printf("%-75s %d\n", "A business trying to change account information", 6);
+            System.out.printf("%-75s %d\n", "Send text messages, make phone calls, or use the internet as any " +
+                    "customer", 7);
+            System.out.printf("%-75s %d\n", "Quit this program", -1);
+            int response = FormValidation.getNumericInput("");
             if (response == -1) {
                 break;
             } else if (response >= 1 && response <= 7) {
@@ -56,7 +54,8 @@ public class MainForm {
                 System.out.println("Invalid number entered, try again!");
             }
         }
-        System.out.println("Thank you for using this program. Good Bye!");
+        System.out.println("Thank you for running with Jog. We hope to see you again soon. Good Bye!");
+        DatabaseInitializer.logout();
     }
 
     private static BaseInterface getInterfaceForResponse(int choice) {
@@ -64,32 +63,19 @@ public class MainForm {
             case 1:
                 return new CustomerInStoreInterface();
             case 2:
-                break;
+                return new SalesClerkInterface();
             case 3:
-                break;
+                return new AnalyzeFinancialsInterface();
             case 4:
-                break;
+                return new NewCustomerInterface();
             case 5:
-                break;
+                return new NewBusinessInterface();
             case 6:
-                break;
+                return new BusinessManagingAccountInterface();
             case 7:
-                break;
+                return new UsePhoneInterface();
             default:
                 throw new IllegalArgumentException("Invalid choice entered!");
         }
-        return null;
     }
-
-    /**
-     * Starts the designated user interface.
-     *
-     * @param baseInterface The {@link BaseInterface} the user chose to work with
-     * @return True if the user would like to go back to the home screen or false if the user would like to continue
-     * navigating.
-     */
-    private static boolean restartInterface(BaseInterface baseInterface) {
-        return baseInterface.performTransaction();
-    }
-
 }

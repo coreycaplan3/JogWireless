@@ -58,4 +58,15 @@ interface TableConstants {
 
     }
 
+    interface Plans {
+
+        String P_TYPE = "P_TYPE";
+        String DESCRIPTION = "DESCRIPTION";
+
+        ColumnTypes P_TYPE_TYPE = ColumnTypes.STRING;
+        ColumnTypes DESCRIPTION_TYPE = ColumnTypes.STRING;
+
+    }
+
+
 }

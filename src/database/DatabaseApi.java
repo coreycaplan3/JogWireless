@@ -36,6 +36,14 @@ final class DatabaseApi {
         return sDatabaseApi;
     }
 
+    void logout() {
+        try {
+            database.databaseConnection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private DatabaseApi(String username, String password) {
         database = new Database(username, password);
     }

@@ -18,4 +18,9 @@ public class DatabaseInitializer {
         return DatabaseApi.initializeInstance(username, password);
     }
 
+    public static void logout() {
+        DatabaseApi databaseApi = DatabaseApi.getInstance();
+        databaseApi.logout();
+    }
+
 }

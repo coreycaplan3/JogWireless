@@ -3,6 +3,7 @@ package database;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -135,6 +136,18 @@ final class ResultSetHelper {
             e.printStackTrace();
             return false;
         }
+    }
+
+    static ArrayList<String> makeColumnNames(String... columnNames) {
+        ArrayList<String> columns = new ArrayList<>();
+        Collections.addAll(columns, columnNames);
+        return columns;
+    }
+
+    static ArrayList<ColumnTypes> makeColumnTypes(ColumnTypes... columnTypes) {
+        ArrayList<ColumnTypes> columns = new ArrayList<>();
+        Collections.addAll(columns, columnTypes);
+        return columns;
     }
 
 }

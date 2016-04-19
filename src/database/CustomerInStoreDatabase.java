@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static database.TableConstants.*;
+
 /**
  * Makes calls to the database that represent either a customer in one of the stores.
  */
@@ -14,6 +16,8 @@ public class CustomerInStoreDatabase {
 
     private DatabaseApi databaseApi;
     private List<Integer> customerIds;
+
+    private int accountId;
 
     public CustomerInStoreDatabase() {
         databaseApi = DatabaseApi.getInstance();
@@ -37,12 +41,12 @@ public class CustomerInStoreDatabase {
                 return false;
             } else {
                 List<String> columnNames = new ArrayList<>();
-                columnNames.add(TableConstants.Customer.ID);
-                columnNames.add(TableConstants.Customer.NAME);
+                columnNames.add(Customer.ID);
+                columnNames.add(Customer.NAME);
 
                 List<ColumnTypes> columnTypes = new ArrayList<>();
-                columnTypes.add(TableConstants.Customer.ID_TYPE);
-                columnTypes.add(TableConstants.Customer.NAME_TYPE);
+                columnTypes.add(Customer.ID_TYPE);
+                columnTypes.add(Customer.NAME_TYPE);
 
                 ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
                 Object[][] results = resultSetHelper.printResults(25);
@@ -84,14 +88,14 @@ public class CustomerInStoreDatabase {
             ResultSet resultSet = databaseApi.executeQuery(query);
 
             List<ColumnTypes> columnTypes = new ArrayList<>();
-            columnTypes.add(TableConstants.PhoneModel.PHONE_ID_TYPE);
-            columnTypes.add(TableConstants.PhoneModel.MANUFACTURER_TYPE);
-            columnTypes.add(TableConstants.PhoneModel.MODEL_TYPE);
+            columnTypes.add(PhoneModel.PHONE_ID_TYPE);
+            columnTypes.add(PhoneModel.MANUFACTURER_TYPE);
+            columnTypes.add(PhoneModel.MODEL_TYPE);
 
             List<String> columnNames = new ArrayList<>();
-            columnNames.add(TableConstants.PhoneModel.PHONE_ID);
-            columnNames.add(TableConstants.PhoneModel.MANUFACTURER);
-            columnNames.add(TableConstants.PhoneModel.MODEL);
+            columnNames.add(PhoneModel.PHONE_ID);
+            columnNames.add(PhoneModel.MANUFACTURER);
+            columnNames.add(PhoneModel.MODEL);
 
             ResultSetHelper helper = new ResultSetHelper(resultSet, columnNames, columnTypes);
             return helper.printResults(20);
@@ -203,16 +207,16 @@ public class CustomerInStoreDatabase {
             ResultSet resultSet = databaseApi.executeQuery(query);
             if (ResultSetHelper.isResultSetValid(resultSet)) {
                 List<String> columnNames = new ArrayList<>();
-                columnNames.add(TableConstants.PhoneProduct.MEID);
-                columnNames.add(TableConstants.PhoneModel.MANUFACTURER);
-                columnNames.add(TableConstants.PhoneModel.MODEL);
-                columnNames.add(TableConstants.PhoneNumber.PHONE_NUMBER);
+                columnNames.add(PhoneProduct.MEID);
+                columnNames.add(PhoneModel.MANUFACTURER);
+                columnNames.add(PhoneModel.MODEL);
+                columnNames.add(PhoneNumber.PHONE_NUMBER);
 
                 List<ColumnTypes> columnTypes = new ArrayList<>();
-                columnTypes.add(TableConstants.PhoneProduct.MEID_TYPE);
-                columnTypes.add(TableConstants.PhoneModel.MANUFACTURER_TYPE);
-                columnTypes.add(TableConstants.PhoneModel.MODEL_TYPE);
-                columnTypes.add(TableConstants.PhoneNumber.PHONE_NUMBER_TYPE);
+                columnTypes.add(PhoneProduct.MEID_TYPE);
+                columnTypes.add(PhoneModel.MANUFACTURER_TYPE);
+                columnTypes.add(PhoneModel.MODEL_TYPE);
+                columnTypes.add(PhoneNumber.PHONE_NUMBER_TYPE);
 
                 ResultSetHelper helper = new ResultSetHelper(resultSet, columnNames, columnTypes);
 
@@ -297,7 +301,7 @@ public class CustomerInStoreDatabase {
                     System.out.println("Sorry, Jog is out of stock of that phone model. Please pick a different phone!");
                     Object[][] phonesForSale = getPhoneModelsForSale();
                     while (true) {
-                        int response = FormValidation.getNumericInput();
+                        int response = FormValidation.getNumericInput("Please select a phone:");
                         if (response - 1 >= phonesForSale.length || response - 1 < 0) {
                             System.out.println("Please enter a valid phone model.");
                         } else {
@@ -336,14 +340,14 @@ public class CustomerInStoreDatabase {
                 return null;
             } else {
                 List<String> columnNames = new ArrayList<>();
-                columnNames.add(TableConstants.Account.A_ID);
-                columnNames.add(TableConstants.Customer.NAME);
-                columnNames.add(TableConstants.Account.PRIMARY_NUMBER);
+                columnNames.add(Account.A_ID);
+                columnNames.add(Customer.NAME);
+                columnNames.add(Account.PRIMARY_NUMBER);
 
                 List<ColumnTypes> columnTypes = new ArrayList<>();
-                columnTypes.add(TableConstants.Account.A_ID_TYPE);
-                columnTypes.add(TableConstants.Customer.NAME_TYPE);
-                columnTypes.add(TableConstants.Account.PRIMARY_NUMBER_TYPE);
+                columnTypes.add(Account.A_ID_TYPE);
+                columnTypes.add(Customer.NAME_TYPE);
+                columnTypes.add(Account.PRIMARY_NUMBER_TYPE);
 
                 ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
                 return resultSetHelper.printResults(30);
@@ -393,6 +397,61 @@ public class CustomerInStoreDatabase {
         } catch (SQLException e) {
             System.out.println("There was an error adding the customer to your account!");
             e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean getAccountsWhereCustomerIsOwner(int customerId) {
+        String query = "SELECT\n" +
+                "  A_ID,\n" +
+                "  PRIMARY_NUMBER,\n" +
+                "  CURRENT_PLAN\n" +
+                "FROM SUBSCRIBES\n" +
+                "  NATURAL JOIN ACCOUNT\n" +
+                "WHERE C_ID = " + customerId +
+                "      AND IS_OWNER = 1";
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            if (!ResultSetHelper.isResultSetValid(resultSet)) {
+                return false;
+            }
+
+            ArrayList<String> columnNames = ResultSetHelper.makeColumnNames(Account.A_ID, Account.PRIMARY_NUMBER,
+                    Account.CURRENT_PLAN);
+            ArrayList<ColumnTypes> columnTypes = ResultSetHelper.makeColumnTypes(Account.A_ID_TYPE,
+                    Account.PRIMARY_NUMBER_TYPE, Account.CURRENT_PLAN_TYPE);
+            ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
+            Object[][] objects = resultSetHelper.printResults(20);
+            accountId = getAccountId(objects);
+
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private int getAccountId(Object[][] objects) {
+        while (true) {
+            int accountId = FormValidation.getNumericInput("Please enter an account ID:");
+            for (Object[] object : objects) {
+                if ((Integer) object[0] == accountId) {
+                    return (int) object[0];
+                }
+            }
+            System.out.println("Invalid account ID entered.");
+        }
+    }
+
+    public boolean changePlan(String desiredPlan) {
+        String query = "update ACCOUNT\n" +
+                "set CURRENT_PLAN = \'" + desiredPlan + "\'\n" +
+                "where A_ID = " + accountId;
+        try {
+            databaseApi.executeQuery(query);
+            return true;
+        } catch (SQLException e) {
+            System.out.println("There was an error processing your request.");
             return false;
         }
     }
