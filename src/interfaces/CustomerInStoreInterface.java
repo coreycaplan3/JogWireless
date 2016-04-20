@@ -26,6 +26,8 @@ public class CustomerInStoreInterface extends CustomerInterface {
         if (name == null && customerId == null) {
             String[] information = getCustomerNameAndId();
             if (information == null) {
+                System.out.println("Returning to the interface screen...");
+                System.out.println();
                 return true;
             }
             name = information[0];
@@ -48,6 +50,44 @@ public class CustomerInStoreInterface extends CustomerInterface {
                 System.out.println("Please enter a valid choice!");
             } else {
                 getChoice(response);
+            }
+        }
+    }
+
+    /**
+     * Allows the user to find his/her information (name and id) from the DB. If the name isn't found, the user is
+     * given the option to open an account.
+     *
+     * @return A string array containing the customer's name and ID in the 0 and 1st index respectively.
+     */
+    private String[] getCustomerNameAndId() {
+        String name, id;
+        while (true) {
+            name = FormValidation.getStringInput("Please enter your name:", "name", 250);
+            ArrayList<Integer> customerIdList = residentialCustomerDatabase.getCustomerIdsForName(name);
+            if (customerIdList != null) {
+                System.out.println();
+                while (true) {
+                    int response = FormValidation.getNumericInput("Please enter your ID from the list, -1 to enter a " +
+                            "different name, or -2 to open a new account:");
+                    if (response == -2) {
+                        performOpenAccount(null);
+                    } else if (residentialCustomerDatabase.isValidCustomerId(customerIdList, response)) {
+                        id = response + "";
+                        return new String[]{name, id};
+                    } else if (response == -1) {
+                        break;
+                    }
+                }
+            } else {
+                System.out.println("It appears you aren't in our system. Would you like to open an account?");
+                boolean isGoingToOpenAccount = FormValidation.getTrueOrFalse();
+                if (!isGoingToOpenAccount) {
+                    return null;
+                } else {
+                    performOpenAccount(null);
+                    return null;
+                }
             }
         }
     }

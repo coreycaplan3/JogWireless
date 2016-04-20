@@ -29,6 +29,22 @@ public final class FormValidation {
     }
 
     /**
+     * Gets true or false input from the user.
+     *
+     * @return True or false...
+     */
+    public static boolean getTrueOrFalse() {
+        while (true) {
+            int choice = getNumericInput("Please enter 0 for no or 1 for yes.");
+            if (choice != 0 && choice != 1) {
+                System.out.println("Please enter a valid option.");
+            } else {
+                return choice == 1;
+            }
+        }
+    }
+
+    /**
      * @param prompt        The prompt to display to the user before requesting information.
      * @param desiredResult The type of string desired by the user. Can be a name, address, etc.
      * @param maxLength     The maximum length that the string can be.
@@ -61,19 +77,20 @@ public final class FormValidation {
     private static boolean isNumberValid(String userInput) {
         try {
             Integer.parseInt(userInput);
+            return true;
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number.");
             return false;
         }
-        return true;
     }
 
     /**
      * Retrieves a valid string that can be sent to the database for parsing as a date. The string is returned in the
      * form of yyyy-MM-dd HH:mm:ss
      *
-     * @param prompt
-     * @return
+     * @param prompt The prompt that should be displayed to the user upon asking him/her for the billing period.
+     * @return A string that has been properly formatted for insertion/retrieval from SQL. It's in the form
+     * yyyy-MM-dd HH:mm:ss
      */
     public static String getBillingPeriod(String prompt) {
         System.out.println(prompt);
@@ -83,26 +100,80 @@ public final class FormValidation {
             if (billingPeriod.length() != 7) {
                 System.out.println("Incorrect formatting of the date.");
             } else {
-                try {
-                    int year = Integer.parseInt(billingPeriod.substring(0, 4));
-                    int month = Integer.parseInt(billingPeriod.substring(5, 7));
-                    if (year < 1900 || year > 2100) {
-                        System.out.println("Please enter a valid year.");
-                        continue;
-                    }
-                    if (month < 1 || month > 12) {
-                        System.out.println("Please enter a valid month.");
-                        continue;
-                    }
-                    if (billingPeriod.charAt(4) != '-') {
-                        System.out.println("Please be sure to enter the dash between the year and the month.");
-                        continue;
-                    }
-                    billingPeriod += "-01 00:00:00";
-                    return billingPeriod;
-                } catch (NumberFormatException e) {
-                    System.out.println("Please enter a valid number for the year and month.");
+                if (isDateValid(billingPeriod)) {
+                    return billingPeriod + "-01 00:00:00";
                 }
+            }
+        }
+    }
+
+    private static boolean isDateValid(String dateToCheck) {
+        //Assumes the proper formatting is "yyyy-MM-dd"
+        try {
+            int year = Integer.parseInt(dateToCheck.substring(0, 4));
+            int month = Integer.parseInt(dateToCheck.substring(5, 7));
+            if (year < 1900 || year > 2100) {
+                System.out.println("Please enter a valid year.");
+                return false;
+            }
+            if (month < 1 || month > 12) {
+                System.out.println("Please enter a valid month.");
+                return false;
+            }
+            if (dateToCheck.charAt(4) != '-') {
+                System.out.println("Please be sure to enter the \"-\" between the year and the month.");
+                return false;
+            }
+            return true;
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a valid number for the year and month.");
+            return false;
+        }
+    }
+
+    /**
+     * Retrieves a phone number from the user.
+     *
+     * @param prompt The prompt that should be displayed to the user when entering the phone number.
+     * @return The phone number as a long.
+     */
+    public static long getPhoneNumber(String prompt) {
+        System.out.println(prompt);
+        System.out.println("The phone number can be in any form, but it must contain 10 digits.");
+        System.out.println("Some valid forms include \"(XXX) XXX XXXX\" or \"XXX-XXX-XXXX\"");
+        while (true) {
+            String phoneNumber = "";
+            String input = scanner.nextLine();
+            for (int i = 0; i < input.length(); i++) {
+                if (Character.isDigit(input.charAt(i))) {
+                    phoneNumber += input.charAt(i);
+                }
+            }
+            if (phoneNumber.length() == 10) {
+                return Long.parseLong(phoneNumber);
+            } else {
+                System.out.println("Please enter a valid 10 digit phone number.");
+            }
+        }
+    }
+
+    /**
+     * Gets a start and end date from the user that can be used for any of the usage tables. The
+     *
+     * @param prompt The prompt that should be displayed to the user.
+     * @return A String array containing the start date and end date in the 0 and 1st index respectively.
+     */
+    public static String[] getUsageDate(String prompt) {
+        System.out.println(prompt);
+        System.out.println("The date must be in the form \"yyyy-MM-dd\" in order to be valid.");
+        while (true) {
+            String usageDate = scanner.nextLine().trim();
+            if (isDateValid(usageDate)) {
+                int randomHour = (int) (Math.random() * 12) + 10;
+                int randomMinute = (int) (Math.random() * 50);
+                int randomSecond = (int) (Math.random() * 20);
+                usageDate += (randomHour + "") + ()
+                return usageDate;
             }
         }
     }

@@ -63,7 +63,7 @@ public class MainForm {
             case 2:
                 return new SalesClerkInterface();
             case 3:
-                return new AccountantInterface();
+                return new ChiefExecutiveInterface();
             case 4:
                 return new NewCustomerInterface();
             case 5:

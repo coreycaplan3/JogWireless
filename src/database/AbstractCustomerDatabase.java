@@ -12,12 +12,12 @@ import java.util.Locale;
 /**
  * An <i>abstract</i> class used for passing on certain methods to the classes that extend it.
  */
-abstract class CustomerDatabase {
+abstract class AbstractCustomerDatabase {
 
     private String customerId;
     private DatabaseApi databaseApi;
 
-    CustomerDatabase() {
+    AbstractCustomerDatabase() {
         databaseApi = DatabaseApi.getInstance();
     }
 
@@ -371,6 +371,22 @@ abstract class CustomerDatabase {
             System.out.println("Unknown error!");
             return null;
         }
+    }
+
+    /**
+     * Checks if the given user's choice matches one of the phones in the 2d array of objects.
+     *
+     * @param customerPhones A 2d array of objects that contains the customer's phones.
+     * @param userSelection  The selection that the user made, from the <i>options</i> column.
+     * @return True if the customer's selection is valid or false if it is not.
+     */
+    public boolean isCustomerPhoneValid(Object[][] customerPhones, int userSelection) {
+        for (Object[] customerPhone : customerPhones) {
+            if (((Integer) customerPhone[customerPhone.length - 1]) == userSelection) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

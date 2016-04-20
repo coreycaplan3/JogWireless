@@ -57,13 +57,27 @@ final class DatabaseApi {
         return database.establishConnection();
     }
 
+    /**
+     * Attempts to execute a query in the database.
+     *
+     * @param query The query that should be executed.
+     * @return Always true.
+     * @throws SQLException
+     */
     ResultSet executeQuery(String query) throws SQLException {
         Statement statement = database.databaseConnection.createStatement();
         return statement.executeQuery(query);
     }
 
-    boolean executeProcedure(String query) throws SQLException {
-        CallableStatement statement = database.databaseConnection.prepareCall(query);
+    /**
+     * Attempts to execute a stored procedure in the database.
+     *
+     * @param procedure The procedure that should be executed, including its parameters.
+     * @return Always false.
+     * @throws SQLException
+     */
+    boolean executeProcedure(String procedure) throws SQLException {
+        CallableStatement statement = database.databaseConnection.prepareCall(procedure);
         return statement.execute();
     }
 

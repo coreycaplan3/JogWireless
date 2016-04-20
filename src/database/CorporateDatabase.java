@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * A class used for making database transactions that are centered upon corporate accounts.
  */
-public class CorporateDatabase extends CustomerDatabase {
+public class CorporateDatabase extends AbstractCustomerDatabase {
 
     private DatabaseApi databaseApi;
 

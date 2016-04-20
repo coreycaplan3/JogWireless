@@ -3,14 +3,13 @@ package database;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
 
 import static database.TableConstants.*;
 
 /**
  * Makes calls to the database that represent either a customer in one of the stores.
  */
-public class ResidentialCustomerDatabase extends CustomerDatabase {
+public class ResidentialCustomerDatabase extends AbstractCustomerDatabase {
 
     private DatabaseApi databaseApi;
 

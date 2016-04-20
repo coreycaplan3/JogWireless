@@ -19,44 +19,40 @@ abstract class CustomerInterface extends BaseInterface {
         corporateDatabase = new CorporateDatabase();
     }
 
-    String[] getCustomerNameAndId() {
-        String name, id;
+    /**
+     * Allows the user to search for a customer by name and retrieve its corresponding customer ID.
+     *
+     * @return A string containing the user's customer ID or null if the user wanted to back out of the transaction.
+     */
+    String getCustomerIdFromList() {
         while (true) {
-            name = FormValidation.getStringInput("Please enter your name:", "name", 250);
-            ArrayList<Integer> customerIdList = residentialCustomerDatabase.getCustomerIdsForName(name);
+            String name = FormValidation.getStringInput("Please enter your name:", "name", 250);
+            ArrayList<Integer> customerIdList = corporateDatabase.getCustomerIdsForName(name);
             if (customerIdList != null) {
                 System.out.println();
-                while (true) {
-                    int response = FormValidation.getNumericInput("Please enter your ID from the list, -1 to enter a " +
-                            "different name, or -2 to open a new account:");
-                    if (response == -2) {
-                        performOpenAccount(null);
-                    } else if (residentialCustomerDatabase.isValidCustomerId(customerIdList, response)) {
-                        id = response + "";
-                        return new String[]{name, id};
-                    } else if (response == -1) {
-                        break;
-                    }
+                int response = FormValidation.getNumericInput("Please enter your ID from the list, -1 to enter a " +
+                        "different name, or -2 to return and create an account as a new customer:");
+                if (response == -2) {
+                    return null;
+                } else if (corporateDatabase.isValidCustomerId(customerIdList, response)) {
+                    return response + "";
+                } else if (response != -1) {
+                    System.out.println("Please enter a valid number from the list.");
                 }
+                //At this point, we know the user entered -1 so the user is re-prompted for a name.
             } else {
-                System.out.println("It appears you aren't in our system. Would you like to open an account?");
-                while (true) {
-                    int response = FormValidation.getNumericInput("Please enter 0 for no, or 1 for yes:");
-                    if (response == 0) {
-                        System.out.println("Returning to the interface screen...");
-                        System.out.println();
-                        return null;
-                    } else if (response == 1) {
-                        performOpenAccount(null);
-                        return null;
-                    } else {
-                        System.out.println("Please either enter 0 or 1.");
-                    }
-                }
+                System.out.println("Please try searching again.");
             }
         }
     }
 
+    /**
+     * Allows the user to open an account or return depending on his/her choice of action.
+     *
+     * @param customerId The ID of the customer wishing to open an account.
+     * @return True if the account opened successfully or false if there was an issue during the transaction or the
+     * user would like to return.
+     */
     boolean performOpenAccount(String customerId) {
         String address;
         String name;
@@ -80,6 +76,9 @@ abstract class CustomerInterface extends BaseInterface {
         return true;
     }
 
+    /**
+     * @return An integer representing the model of phone that the user would like.
+     */
     @SuppressWarnings("Duplicates")
     int pickNewPhone() {
         Object[][] phonesForSale = residentialCustomerDatabase.getPhoneModelsForSale();
@@ -95,6 +94,12 @@ abstract class CustomerInterface extends BaseInterface {
 
     abstract boolean isResidential();
 
+    /**
+     * Prompts the user for the different phone plans and forces selection.
+     *
+     * @return One of the phone plans available to the user (P_TYPE, primary key). Whether its residential or
+     * corporate depends on the interface with which the user is interacting.
+     */
     String getPhonePlan() {
         String[][] phonePlans;
         if (isResidential()) {
