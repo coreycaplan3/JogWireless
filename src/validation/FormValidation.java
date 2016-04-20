@@ -19,8 +19,8 @@ public final class FormValidation {
      * @return A number that the user entered.
      */
     public static int getNumericInput(String prompt) {
-        System.out.println(prompt);
         while (true) {
+            System.out.println(prompt);
             String s = scanner.nextLine();
             if (isNumberValid(s)) {
                 return Integer.parseInt(s);
@@ -31,17 +31,20 @@ public final class FormValidation {
     /**
      * @param prompt        The prompt to display to the user before requesting information.
      * @param desiredResult The type of string desired by the user. Can be a name, address, etc.
+     * @param maxLength     The maximum length that the string can be.
      * @return A string that was entered by the user and has been sanitized of all things that could negatively
      * effect the insertion of data into the database.
      */
-    public static String getStringInput(String prompt, String desiredResult) {
-        System.out.println(prompt);
+    public static String getStringInput(String prompt, String desiredResult, int maxLength) {
         while (true) {
+            System.out.println(prompt);
             String s = scanner.nextLine();
             if (s.contains("\'") || s.contains("\"")) {
                 System.out.println("Please enter a valid " + desiredResult);
             } else if (s.length() < 2) {
                 System.out.println("Sorry, your input was too short.");
+            } else if (s.length() >= maxLength) {
+                System.out.println("Sorry, your input was too long.");
             } else {
                 return s;
             }

@@ -12,14 +12,12 @@ import static database.TableConstants.*;
 /**
  * Makes calls to the database that represent either a customer in one of the stores.
  */
-public class CustomerInStoreDatabase {
+public class ResidentCustomerDatabase {
 
     private DatabaseApi databaseApi;
     private List<Integer> customerIds;
 
-    private int accountId;
-
-    public CustomerInStoreDatabase() {
+    public ResidentCustomerDatabase() {
         databaseApi = DatabaseApi.getInstance();
         customerIds = new ArrayList<>();
     }
@@ -358,17 +356,13 @@ public class CustomerInStoreDatabase {
         }
     }
 
-    public boolean isAccountIdValid(Object[][] accountIds, int chosenId) {
-        for (Object[] accountId : accountIds) {
-            if ((Integer) accountId[0] == chosenId) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public String getNameFromCustomerId(int id) {
-        String query = "SELECT NAME FROM CUSTOMER WHERE C_ID = " + id;
+    /**
+     * @param customerId The ID of the customer whose name should be retrieved.
+     * @return The customer's name if the transaction was successful or <b>null</b> if the transaction failed or the
+     * customer ID doesn't exist.
+     */
+    public String getNameFromCustomerId(int customerId) {
+        String query = "SELECT NAME FROM CUSTOMER WHERE C_ID = " + customerId;
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
             return resultSet.getString(0);
@@ -377,8 +371,13 @@ public class CustomerInStoreDatabase {
         }
     }
 
-    public String getAddressFromCustomerId(int id) {
-        String query = "SELECT ADDRESS FROM CUSTOMER WHERE C_ID = " + id;
+    /**
+     * @param customerId The ID of the customer whose address should be retrieved.
+     * @return The address of the given customer or <b>null</b> if the customer ID doesn't exist or there was an
+     * error performing the transaction.
+     */
+    public String getAddressFromCustomerId(int customerId) {
+        String query = "SELECT ADDRESS FROM CUSTOMER WHERE C_ID = " + customerId;
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
             return resultSet.getString(0);
@@ -387,6 +386,17 @@ public class CustomerInStoreDatabase {
         }
     }
 
+    /**
+     * Adds a customer to the given account.
+     *
+     * @param customerId      The customer's ID if it's an existing customer or <b>-1</b> if the customer is new.
+     * @param customerName    The customer's name or <b>null</b> if the customer already exists.
+     * @param customerAddress The customer's address or <b>null</b> if the customer already exists.
+     * @param desiredPhone    The phone type that the user would like to purchase.
+     * @param accountId       The account ID of the account to which the user would like to be added.
+     * @param storeNumber     The store number from which the user is performing this transaction.
+     * @return True if the transaction occurred successfully or false if there was an error.
+     */
     public boolean addCustomerToAccount(int customerId, String customerName, String customerAddress, int desiredPhone,
                                         int accountId, int storeNumber) {
         String query = "{call ADD_CUSTOMER_TO_ACCOUNT(" + customerId + ", \'" + customerName + "\', \'" +
@@ -395,13 +405,42 @@ public class CustomerInStoreDatabase {
             databaseApi.executeProcedure(query);
             return true;
         } catch (SQLException e) {
-            System.out.println("There was an error adding the customer to your account!");
-            e.printStackTrace();
+            if (e.getErrorCode() == -20000) {
+                System.out.println("There are no more valid phone numbers! Jog needs to buy more numbers!");
+            } else if (e.getErrorCode() == -20001) {
+                System.out.println("Jog is out of stock of that model phone. Pick a different phone!");
+                desiredPhone = pickNewPhone();
+                return addCustomerToAccount(customerId, customerName, customerAddress, desiredPhone, accountId,
+                        storeNumber);
+            } else {
+                System.out.println("There was an error adding the customer to your account!");
+            }
             return false;
         }
     }
 
-    public boolean getAccountsWhereCustomerIsOwner(int customerId) {
+    @SuppressWarnings("Duplicates")
+    private int pickNewPhone() {
+        Object[][] phonesForSale = getPhoneModelsForSale();
+        while (true) {
+            int desiredPhone = FormValidation.getNumericInput("Please enter the Phone ID of the phone you would like to buy:");
+            if (desiredPhone >= 1 && desiredPhone <= phonesForSale.length) {
+                return desiredPhone;
+            } else {
+                System.out.println("Please enter a valid phone choice.");
+            }
+        }
+    }
+
+    /**
+     * Retrieves the accounts for which the given customer ID is the owner.
+     *
+     * @param customerId The customer's ID.
+     * @return A 2d array of Strings where the 0 column is the account ID, the 1st column is the primary number,
+     * and the 2nd column is the current plan. Can be <b>null</b> if there are no accounts that the given customer owns
+     * or there was an error processing the transaction.
+     */
+    public String[][] getAccountsWhereCustomerIsOwner(int customerId) {
         String query = "SELECT\n" +
                 "  A_ID,\n" +
                 "  PRIMARY_NUMBER,\n" +
@@ -413,7 +452,7 @@ public class CustomerInStoreDatabase {
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
             if (!ResultSetHelper.isResultSetValid(resultSet)) {
-                return false;
+                return null;
             }
 
             ArrayList<String> columnNames = ResultSetHelper.makeColumnNames(Account.A_ID, Account.PRIMARY_NUMBER,
@@ -422,28 +461,26 @@ public class CustomerInStoreDatabase {
                     Account.PRIMARY_NUMBER_TYPE, Account.CURRENT_PLAN_TYPE);
             ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
             Object[][] objects = resultSetHelper.printResults(20);
-            accountId = getAccountId(objects);
 
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    private int getAccountId(Object[][] objects) {
-        while (true) {
-            int accountId = FormValidation.getNumericInput("Please enter an account ID:");
-            for (Object[] object : objects) {
-                if ((Integer) object[0] == accountId) {
-                    return (int) object[0];
+            String[][] accounts = new String[objects.length][objects[0].length];
+            for (int i = 0; i < objects.length; i++) {
+                for (int j = 0; j < objects[i].length; j++) {
+                    accounts[i][j] = objects[i][j] + "";
                 }
             }
-            System.out.println("Invalid account ID entered.");
+            return accounts;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 
-    public boolean changePlan(String desiredPlan) {
+    /**
+     * @param desiredPlan The plan to which the user would like to switch.
+     * @param accountId   The account ID of the account whose plan should be changed.
+     * @return True if the change processed successfully or false if it did not.
+     */
+    public boolean changePlan(String desiredPlan, int accountId) {
         String query = "update ACCOUNT\n" +
                 "set CURRENT_PLAN = \'" + desiredPlan + "\'\n" +
                 "where A_ID = " + accountId;
@@ -453,6 +490,48 @@ public class CustomerInStoreDatabase {
         } catch (SQLException e) {
             System.out.println("There was an error processing your request.");
             return false;
+        }
+    }
+
+    /**
+     * @return A 2d array of strings containing the plan name in the 0 column and a description in the 1st. Can be
+     * <b>null</b> if there was an error performing the transaction.
+     */
+    public String[][] getResidentPlans() {
+        try {
+            String query = "SELECT *\n" +
+                    "FROM PLANS\n" +
+                    "WHERE IS_RESIDENTIAL = 1\n";
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            ArrayList<String> planDescriptions = new ArrayList<>();
+            ArrayList<String> planNames = new ArrayList<>();
+
+            while (resultSet.next()) {
+                String planName = resultSet.getString(Plans.P_TYPE);
+                int hardLimit = resultSet.getInt(Plans.HARD_LIMIT);
+                int limitTexts = resultSet.getInt(Plans.LIMIT_TEXTS);
+                int limitCalls = resultSet.getInt(Plans.LIMIT_CALLS_SECONDS);
+                int limitInternet = resultSet.getInt(Plans.LIMIT_INTERNET_MEGABYTES);
+                double rateTexts = resultSet.getDouble(Plans.RATE_TEXTS);
+                double rateCalls = resultSet.getDouble(Plans.RATE_CALLS_SECONDS);
+                double rateInternet = resultSet.getDouble(Plans.RATE_INTERNET_MEGABYTES);
+                double baseRate = resultSet.getDouble(Plans.BASE_RATE);
+
+                PlanParser planParser = new PlanParser(planName, hardLimit, limitTexts, limitCalls, limitInternet,
+                        rateTexts, rateCalls, rateInternet, baseRate);
+                planDescriptions.add(planParser.parse());
+                planNames.add(planName);
+            }
+
+            String[][] planInformation = new String[planDescriptions.size()][2];
+            for (int i = 0; i < planInformation.length; i++) {
+                planInformation[i][0] = planNames.get(i);
+                planInformation[i][1] = planDescriptions.get(i);
+            }
+            return planInformation;
+        } catch (SQLException e) {
+            System.out.println("Error processing transaction...");
+            return null;
         }
     }
 

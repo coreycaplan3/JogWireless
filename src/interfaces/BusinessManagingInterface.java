@@ -3,7 +3,7 @@ package interfaces;
 /**
  *
  */
-public class BusinessManagingAccountInterface extends BaseInterface {
+public class BusinessManagingInterface extends BaseInterface {
     @Override
     public boolean performTransaction() {
         return false;

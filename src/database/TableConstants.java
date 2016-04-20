@@ -61,10 +61,26 @@ interface TableConstants {
     interface Plans {
 
         String P_TYPE = "P_TYPE";
-        String DESCRIPTION = "DESCRIPTION";
+        String HARD_LIMIT = "HARD_LIMIT";
+        String LIMIT_TEXTS = "LIMIT_TEXTS";
+        String LIMIT_CALLS_SECONDS = "LIMIT_CALLS_SECONDS";
+        String LIMIT_INTERNET_MEGABYTES = "LIMIT_INTERNET_MEGABYTES";
+        String RATE_TEXTS = "RATE_TEXTS";
+        String RATE_CALLS_SECONDS = "RATE_CALLS_SECONDS";
+        String RATE_INTERNET_MEGABYTES = "RATE_INTERNET_MEGABYTES";
+        String BASE_RATE = "BASE_RATE";
+        String IS_RESIDENTIAL = "IS_RESIDENTIAL";
 
         ColumnTypes P_TYPE_TYPE = ColumnTypes.STRING;
-        ColumnTypes DESCRIPTION_TYPE = ColumnTypes.STRING;
+        ColumnTypes HARD_LIMIT_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes LIMIT_TEXTS_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes LIMIT_CALLS_SECONDS_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes LIMIT_INTERNET_MEGABYTES_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes BASE_RATE_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes IS_RESIDENTIAL_TYPE = ColumnTypes.INTEGER;
 
     }
 

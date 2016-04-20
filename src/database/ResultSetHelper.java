@@ -49,7 +49,11 @@ final class ResultSetHelper {
                 } else if (columnTypes.get(i) == ColumnTypes.LONG) {
                     object[i] = resultSet.getLong(columnNames.get(i));
                     System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                } else if (columnTypes.get(i) == ColumnTypes.DOUBLE) {
+                    object[i] = resultSet.getDouble(columnNames.get(i));
+                    System.out.printf("%.2-" + minimumSpacing + "f", object[i]);
                 }
+
             }
             arrayList.add(object);
             System.out.println();
@@ -98,6 +102,9 @@ final class ResultSetHelper {
                     } else if (columnTypes.get(i) == ColumnTypes.LONG) {
                         object[i] = resultSet.getLong(columnNames.get(i));
                         System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                    } else if (columnTypes.get(i) == ColumnTypes.DOUBLE) {
+                        object[i] = resultSet.getDouble(columnNames.get(i));
+                        System.out.printf("%.2-" + minimumSpacing + "f", object[i]);
                     }
                 } else {
                     object[i] = (rowCount + 1);

@@ -1,6 +1,6 @@
 package interfaces;
 
-import database.CustomerInStoreDatabase;
+import database.ResidentCustomerDatabase;
 import validation.FormValidation;
 
 /**
@@ -12,17 +12,19 @@ public class CustomerInStoreInterface extends BaseInterface {
 
     private String name;
     private String id;
-    private CustomerInStoreDatabase customerInStoreDatabase;
+    private ResidentCustomerDatabase residentCustomerDatabase;
 
     public CustomerInStoreInterface() {
         System.out.println("Greetings customer, welcome to store number " + storeNumber + "!");
-        customerInStoreDatabase = new CustomerInStoreDatabase();
+        residentCustomerDatabase = new ResidentCustomerDatabase();
     }
 
     @Override
     public boolean performTransaction() {
         if (name == null && id == null) {
-            getCustomerNameAndId();
+            if (!getCustomerNameAndId()) {
+                return true;
+            }
         }
         System.out.println("Welcome " + name + ", you look great today!");
         while (true) {
@@ -46,29 +48,34 @@ public class CustomerInStoreInterface extends BaseInterface {
     }
 
     @SuppressWarnings("Duplicates")
-    private void getCustomerNameAndId() {
+    private boolean getCustomerNameAndId() {
         while (true) {
-            name = FormValidation.getStringInput("Please enter your name:", "name");
-            if (customerInStoreDatabase.getCustomerIdsForName(name)) {
+            name = FormValidation.getStringInput("Please enter your name:", "name", 250);
+            if (residentCustomerDatabase.getCustomerIdsForName(name)) {
                 System.out.println();
-                int response = FormValidation.getNumericInput("Please enter your ID from the list, -1 to enter a " +
-                        "different name, or -2 to open a new account:");
-                if (response == -2) {
-                    performOpenAccount();
-                } else if (customerInStoreDatabase.isValidCustomerId(response)) {
-                    id = response + "";
-                    return;
-                } else if (response != -1) {
-                    System.out.println("Please enter a valid number from the list.");
+                while (true) {
+                    int response = FormValidation.getNumericInput("Please enter your ID from the list, -1 to enter a " +
+                            "different name, or -2 to open a new account:");
+                    if (response == -2) {
+                        performOpenAccount();
+                    } else if (residentCustomerDatabase.isValidCustomerId(response)) {
+                        id = response + "";
+                        return true;
+                    } else if (response == -1) {
+                        break;
+                    }
                 }
             } else {
                 System.out.println("It appears you aren't in our system. Would you like to open an account?");
                 while (true) {
                     int response = FormValidation.getNumericInput("Please enter 0 for no, or 1 for yes:");
                     if (response == 0) {
-                        break;
+                        System.out.println("Returning to the interface screen...");
+                        System.out.println();
+                        return false;
                     } else if (response == 1) {
                         performOpenAccount();
+                        return true;
                     } else {
                         System.out.println("Please either enter 0 or 1.");
                     }
@@ -104,14 +111,14 @@ public class CustomerInStoreInterface extends BaseInterface {
      */
     private boolean performOpenAccount() {
         System.out.println("Thank you for wanting to sign up with Jog!");
-        String name = FormValidation.getStringInput("Please enter your name, or enter -q to return", "name");
+        String name = FormValidation.getStringInput("Please enter your name, or enter -q to return", "name", 250);
         if (name.equals("-q")) {
             return false;
         }
-        String address = FormValidation.getStringInput("Please enter your address:", "address");
+        String address = FormValidation.getStringInput("Please enter your address:", "address", 250);
         int desiredPhone = pickNewPhone();
-        String desiredPlan = getResidentPlans();
-        if (customerInStoreDatabase.createAccount(name, address, desiredPhone, storeNumber,
+        String desiredPlan = pickNewPlan();
+        if (residentCustomerDatabase.createAccount(name, address, desiredPhone, storeNumber,
                 desiredPlan)) {
             System.out.println("Congrats, your account as been successfully created!");
             System.out.println("Welcome to Jog Wireless!");
@@ -122,21 +129,21 @@ public class CustomerInStoreInterface extends BaseInterface {
 
     private void performUpgradePhone() {
         System.out.println("Here are the different models from which you may choose:");
-        Object[][] phonesForSale = customerInStoreDatabase.getPhoneModelsForSale();
+        Object[][] phonesForSale = residentCustomerDatabase.getPhoneModelsForSale();
         while (true) {
             int response = FormValidation.getNumericInput("Please enter the Phone ID of the phone you would like " +
                     "to buy, or enter -1 to return:");
             if (response == -1) {
                 return;
-            } else if (customerInStoreDatabase.isPhoneStocked(response, phonesForSale)) {
+            } else if (residentCustomerDatabase.isPhoneStocked(response, phonesForSale)) {
                 int phoneToBuy = (int) phonesForSale[response - 1][0];
-                Object[][] userPhones = customerInStoreDatabase.getCustomerPhones(id);
+                Object[][] userPhones = residentCustomerDatabase.getCustomerPhones(id);
                 while (true) {
                     response = FormValidation.getNumericInput("Please select which of your phones you would like to upgrade:");
-                    if (customerInStoreDatabase.doesUserOwnPhone(response, userPhones)) {
+                    if (residentCustomerDatabase.doesUserOwnPhone(response, userPhones)) {
                         long oldMeid = (long) userPhones[response - 1][0];
                         long phoneNumber = (long) userPhones[response - 1][3];
-                        if (customerInStoreDatabase.replaceNewPhone(phoneToBuy, id, oldMeid, phoneNumber, storeNumber)) {
+                        if (residentCustomerDatabase.replaceNewPhone(phoneToBuy, id, oldMeid, phoneNumber, storeNumber)) {
                             System.out.println("Here is your new phone! Your information has been updated and " +
                                     "transferred over.");
                             System.out.println("Thank you for shopping with Jog!");
@@ -147,28 +154,6 @@ public class CustomerInStoreInterface extends BaseInterface {
                 }
             } else {
                 System.out.println("Invalid Phone ID entered! Please try again.");
-            }
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    private String getResidentPlans() {
-        System.out.println("Please select a plan for your account:");
-        System.out.printf("%-120s %d\n", "Resident - Base rate of $80/month. Includes 300 " +
-                "outgoing minutes, 1,000 outgoing texts, 10GB data. There are major overdraft fees.", 1);
-        System.out.printf("%-120s %d\n", "Resident - As used. $0.09 per outgoing minute, $0.01 per " +
-                "outgoing text, and $5.12 per GB of data", 2);
-        System.out.println("With Jog, all incoming calls and text messages are free!");
-        while (true) {
-            int response = FormValidation.getNumericInput("Please select a plan");
-            if (response > 2 || response < 1) {
-                System.out.println("Please enter a valid response.");
-            } else {
-                if (response == 1) {
-                    return "RESIDENT_LIMIT";
-                } else {
-                    return "RESIDENT_AS_USED";
-                }
             }
         }
     }
@@ -186,7 +171,7 @@ public class CustomerInStoreInterface extends BaseInterface {
             } else if (response < 1 || response > 3) {
                 System.out.println("Please enter a valid choice.");
             } else {
-                Object[][] phones = customerInStoreDatabase.getCustomerPhones(id);
+                Object[][] phones = residentCustomerDatabase.getCustomerPhones(id);
                 if (phones == null) {
                     System.out.println("You have no phones to report!");
                     System.out.println();
@@ -196,8 +181,8 @@ public class CustomerInStoreInterface extends BaseInterface {
                     case 1:
                         while (true) {
                             response = FormValidation.getNumericInput("Please select a phone to be reported as lost: ");
-                            if (customerInStoreDatabase.doesUserOwnPhone(response, phones)) {
-                                if (customerInStoreDatabase.reportLostPhone(phones[response - 1])) {
+                            if (residentCustomerDatabase.doesUserOwnPhone(response, phones)) {
+                                if (residentCustomerDatabase.reportLostPhone(phones[response - 1])) {
                                     System.out.println("Your phone as been successfully reported as lost.");
                                     System.out.println("We here at Jog are sorry for the inconvenience, but you will still " +
                                             "have to pay more money for a new phone!");
@@ -210,8 +195,8 @@ public class CustomerInStoreInterface extends BaseInterface {
                     case 2:
                         while (true) {
                             response = FormValidation.getNumericInput("Please select a phone to be reported as stolen: ");
-                            if (customerInStoreDatabase.doesUserOwnPhone(response, phones)) {
-                                if (customerInStoreDatabase.reportStolenPhone(phones[response - 1])) {
+                            if (residentCustomerDatabase.doesUserOwnPhone(response, phones)) {
+                                if (residentCustomerDatabase.reportStolenPhone(phones[response - 1])) {
                                     System.out.println("Your phone as been successfully reported as stolen.");
                                     System.out.println("We here at Jog are sorry for the inconvenience, but you will still " +
                                             "have to pay more money for a new phone!");
@@ -224,8 +209,8 @@ public class CustomerInStoreInterface extends BaseInterface {
                     case 3:
                         while (true) {
                             response = FormValidation.getNumericInput("Please select a phone to be reported as found: ");
-                            if (customerInStoreDatabase.doesUserOwnPhone(response, phones)) {
-                                if (customerInStoreDatabase.reportFoundPhone(phones[response - 1])) {
+                            if (residentCustomerDatabase.doesUserOwnPhone(response, phones)) {
+                                if (residentCustomerDatabase.reportFoundPhone(phones[response - 1])) {
                                     System.out.println("Your phone as been successfully reported as found!");
                                     System.out.println("We here at Jog are glad that you were able to find your phone!");
                                     System.out.println("Moving back to the selection screen...");
@@ -242,7 +227,7 @@ public class CustomerInStoreInterface extends BaseInterface {
     }
 
     private void addCustomerToAccount() {
-        Object[][] customerAccounts = customerInStoreDatabase.getCustomerAccounts(id);
+        Object[][] customerAccounts = residentCustomerDatabase.getCustomerAccounts(id);
         if (customerAccounts == null) {
             System.out.println();
             return;
@@ -252,23 +237,26 @@ public class CustomerInStoreInterface extends BaseInterface {
                     "a customer, or -1 to return:");
             if (accountId == -1) {
                 return;
-            } else if (customerInStoreDatabase.isAccountIdValid(customerAccounts, accountId)) {
+            } else if (isAccountIdValid(customerAccounts, accountId)) {
                 System.out.println();
-                String name = FormValidation.getStringInput("Enter the name of the new person you would like to add to " +
-                        "your account, or enter -s to search from our existing customer base: ", "name");
+                String name = FormValidation.getStringInput("Enter the name of the new person you would like to add " +
+                        "to your account, or enter -s to search from our existing customer base: ", "name", 250);
                 if (name.equals("-s")) {
                     while (true) {
-                        name = FormValidation.getStringInput("Please enter the name of the customer you would like to find:", "name");
-                        if (customerInStoreDatabase.getCustomerIdsForName(name)) {
+                        name = FormValidation.getStringInput("Please enter the name of the customer you would like " +
+                                "to find:", "name", 250);
+                        if (residentCustomerDatabase.getCustomerIdsForName(name)) {
                             int id = FormValidation.getNumericInput("Please enter the customer\'s ID from the list " +
                                     "or enter -1 to research:");
-                            if (customerInStoreDatabase.isValidCustomerId(id)) {
-                                name = customerInStoreDatabase.getNameFromCustomerId(id);
-                                String address = customerInStoreDatabase.getAddressFromCustomerId(id);
+                            if (residentCustomerDatabase.isValidCustomerId(id)) {
+                                name = residentCustomerDatabase.getNameFromCustomerId(id);
+                                String address = residentCustomerDatabase.getAddressFromCustomerId(id);
                                 int desiredPhone = pickNewPhone();
-                                if (customerInStoreDatabase.addCustomerToAccount(id, name, address, desiredPhone,
+                                if (residentCustomerDatabase.addCustomerToAccount(id, name, address, desiredPhone,
                                         accountId, storeNumber)) {
                                     System.out.println("Successfully added the " + name + " to your account!");
+                                } else {
+                                    System.out.println("Returning to the home screen...");
                                 }
                                 System.out.println();
                                 return;
@@ -278,9 +266,10 @@ public class CustomerInStoreInterface extends BaseInterface {
                         }
                     }
                 } else {
-                    String address = FormValidation.getStringInput("Please enter the person\'s address:", "address");
+                    String address = FormValidation.getStringInput("Please enter the person\'s address:", "address",
+                            250);
                     int desiredPhone = pickNewPhone();
-                    if (customerInStoreDatabase.addCustomerToAccount(-1, name, address, desiredPhone,
+                    if (residentCustomerDatabase.addCustomerToAccount(-1, name, address, desiredPhone,
                             accountId, storeNumber)) {
                         System.out.println("Successfully added " + name + " to your account!");
                     }
@@ -293,9 +282,18 @@ public class CustomerInStoreInterface extends BaseInterface {
         }
     }
 
+    private boolean isAccountIdValid(Object[][] accountIds, int chosenId) {
+        for (Object[] accountId : accountIds) {
+            if ((Integer) accountId[0] == chosenId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("Duplicates")
     private int pickNewPhone() {
-        Object[][] phonesForSale = customerInStoreDatabase.getPhoneModelsForSale();
+        Object[][] phonesForSale = residentCustomerDatabase.getPhoneModelsForSale();
         while (true) {
             int desiredPhone = FormValidation.getNumericInput("Please enter the Phone ID of the phone you would like to buy:");
             if (desiredPhone >= 1 && desiredPhone <= phonesForSale.length) {
@@ -308,17 +306,50 @@ public class CustomerInStoreInterface extends BaseInterface {
 
     private void changeAccountPlan() {
         System.out.println("Here are the accounts of which you are listed as an owner:");
-        if (!customerInStoreDatabase.getAccountsWhereCustomerIsOwner(Integer.parseInt(id))) {
+        String[][] accounts = residentCustomerDatabase.getAccountsWhereCustomerIsOwner(Integer.parseInt(id));
+        if (accounts == null) {
             System.out.println("Returning to the home screen...");
             System.out.println();
             return;
         }
-        String desiredPlan = getResidentPlans();
-        if (customerInStoreDatabase.changePlan(desiredPlan)) {
+        int accountId = getAccountId(accounts);
+        String plan = pickNewPlan();
+        if (residentCustomerDatabase.changePlan(plan, accountId)) {
             System.out.println("Your desired plan has been changed and the effects will take place during the next " +
                     "billing cycle.");
-            System.out.println("Returning to the home screen....");
+        }
+        System.out.println("Returning to the home screen....");
+        System.out.println();
+    }
+
+    private int getAccountId(String[][] accounts) {
+        while (true) {
+            int accountId = FormValidation.getNumericInput("Please enter an account ID from the list");
+            for (String[] account : accounts) {
+                if (Integer.parseInt(account[0]) == accountId) {
+                    return accountId;
+                }
+            }
+        }
+    }
+
+    private String pickNewPlan() {
+        String[][] residentPlans = residentCustomerDatabase.getResidentPlans();
+        int length = (residentPlans.length + "").length();
+        length = Math.min(length, 6);
+        System.out.printf("%-130s %-" + length + "s", "Plan", "Option\n");
+        for (int i = 0; i < residentPlans.length; i++) {
+            System.out.printf("%s\n", residentPlans[i][1]);
+            System.out.printf("%" + 134 + "s\n", (i + 1));
             System.out.println();
+        }
+        while (true) {
+            int choice = FormValidation.getNumericInput("Please select a plan for your account:");
+            if (choice >= 1 && choice <= residentPlans.length) {
+                return residentPlans[choice - 1][0];
+            } else {
+                System.out.println("Please select a valid plan.");
+            }
         }
     }
 

@@ -12,13 +12,11 @@ import java.util.Scanner;
 public class MainForm {
 
     public static void main(String[] args) {
-        System.out.println("Welcome to Corey\'s CSE 341 Project. To begin, please enter a username or password");
-        String username;
+        System.out.println("Welcome to Corey\'s CSE 341 Project. To begin, please enter cdc218\'s password");
+        String username = "cdc218";
         String password;
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            System.out.print("Username: ");
-            username = scanner.nextLine();
             System.out.print("Password: ");
             password = scanner.nextLine();
             if (DatabaseInitializer.login(username, password)) {
@@ -34,7 +32,7 @@ public class MainForm {
             System.out.printf("%-75s %d\n", "A sales clerk/cashier working in a store", 2);
             System.out.printf("%-75s %d\n", "An accountant or CFO looking at financial information", 3);
             System.out.printf("%-75s %d\n", "A residential customer trying to get started with Jog online", 4);
-            System.out.printf("%-75s %d\n", "A business trying to get started with Jog", 5);
+            System.out.printf("%-75s %d\n", "A business hoping to get started with Jog", 5);
             System.out.printf("%-75s %d\n", "A business trying to change account information", 6);
             System.out.printf("%-75s %d\n", "Send text messages, make phone calls, or use the internet as any " +
                     "customer", 7);
@@ -65,13 +63,13 @@ public class MainForm {
             case 2:
                 return new SalesClerkInterface();
             case 3:
-                return new AnalyzeFinancialsInterface();
+                return new CeoInterface();
             case 4:
                 return new NewCustomerInterface();
             case 5:
                 return new NewBusinessInterface();
             case 6:
-                return new BusinessManagingAccountInterface();
+                return new BusinessManagingInterface();
             case 7:
                 return new UsePhoneInterface();
             default:
