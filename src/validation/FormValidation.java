@@ -68,4 +68,43 @@ public final class FormValidation {
         return true;
     }
 
+    /**
+     * Retrieves a valid string that can be sent to the database for parsing as a date. The string is returned in the
+     * form of yyyy-MM-dd HH:mm:ss
+     *
+     * @param prompt
+     * @return
+     */
+    public static String getBillingPeriod(String prompt) {
+        System.out.println(prompt);
+        while (true) {
+            System.out.println("Please enter the date in the form of yyyy-MM:");
+            String billingPeriod = scanner.nextLine().trim();
+            if (billingPeriod.length() != 7) {
+                System.out.println("Incorrect formatting of the date.");
+            } else {
+                try {
+                    int year = Integer.parseInt(billingPeriod.substring(0, 4));
+                    int month = Integer.parseInt(billingPeriod.substring(5, 7));
+                    if (year < 1900 || year > 2100) {
+                        System.out.println("Please enter a valid year.");
+                        continue;
+                    }
+                    if (month < 1 || month > 12) {
+                        System.out.println("Please enter a valid month.");
+                        continue;
+                    }
+                    if (billingPeriod.charAt(4) != '-') {
+                        System.out.println("Please be sure to enter the dash between the year and the month.");
+                        continue;
+                    }
+                    billingPeriod += "-01 00:00:00";
+                    return billingPeriod;
+                } catch (NumberFormatException e) {
+                    System.out.println("Please enter a valid number for the year and month.");
+                }
+            }
+        }
+    }
+
 }

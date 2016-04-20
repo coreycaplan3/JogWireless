@@ -5,6 +5,6 @@ package database;
  */
 enum ColumnTypes {
 
-    INTEGER, STRING, LONG, DOUBLE
+    INTEGER, STRING, LONG, DOUBLE, DATE
 
 }

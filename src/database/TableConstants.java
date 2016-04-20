@@ -1,8 +1,12 @@
 package database;
 
+import static database.ColumnTypes.*;
+
 /**
- *
+ * An interface filled with constants used to represent the different tables and types of data that can be stored in
+ * SQL tables.
  */
+@SuppressWarnings("unused")
 interface TableConstants {
 
     interface Account {
@@ -12,11 +16,27 @@ interface TableConstants {
         String PRIMARY_NUMBER = "PRIMARY_NUMBER";
         String CURRENT_PLAN = "CURRENT_PLAN";
 
-        ColumnTypes A_ID_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes A_STATUS_TYPE = ColumnTypes.STRING;
-        ColumnTypes PRIMARY_NUMBER_TYPE = ColumnTypes.LONG;
-        ColumnTypes CURRENT_PLAN_TYPE = ColumnTypes.STRING;
+        ColumnTypes A_ID_TYPE = INTEGER;
+        ColumnTypes A_STATUS_TYPE = STRING;
+        ColumnTypes PRIMARY_NUMBER_TYPE = LONG;
+        ColumnTypes CURRENT_PLAN_TYPE = STRING;
 
+    }
+
+    interface Bill {
+        String A_ID = "A_ID";
+        String BILL_ID = "BILL_ID";
+        String BILL_PERIOD = "BILL_PERIOD";
+        String IS_PAID = "IS_PAID";
+        String PLAN = "PLAN";
+        String ACCUMULATED_CHARGES = "ACCUMULATED_CHARGES";
+
+        ColumnTypes A_ID_TYPE = INTEGER;
+        ColumnTypes BILL_ID_TYPE = INTEGER;
+        ColumnTypes BILL_PERIOD_TYPE = DATE;
+        ColumnTypes IS_PAID_TYPE = INTEGER;
+        ColumnTypes PLAN_TYPE = STRING;
+        ColumnTypes ACCUMULATED_CHARGES_TYPE = DOUBLE;
     }
 
     interface Customer {
@@ -24,9 +44,9 @@ interface TableConstants {
         String ADDRESS = "ADDRESS";
         String NAME = "NAME";
 
-        ColumnTypes ID_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes ADDRESS_TYPE = ColumnTypes.STRING;
-        ColumnTypes NAME_TYPE = ColumnTypes.STRING;
+        ColumnTypes ID_TYPE = INTEGER;
+        ColumnTypes ADDRESS_TYPE = STRING;
+        ColumnTypes NAME_TYPE = STRING;
     }
 
     interface PhoneModel {
@@ -35,17 +55,17 @@ interface TableConstants {
         String MANUFACTURER = "MANUFACTURER";
         String MODEL = "MODEL";
 
-        ColumnTypes PHONE_ID_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes MANUFACTURER_TYPE = ColumnTypes.STRING;
-        ColumnTypes MODEL_TYPE = ColumnTypes.STRING;
+        ColumnTypes PHONE_ID_TYPE = INTEGER;
+        ColumnTypes MANUFACTURER_TYPE = STRING;
+        ColumnTypes MODEL_TYPE = STRING;
     }
 
     interface PhoneNumber {
         String PHONE_NUMBER = "PHONE_NUMBER";
         String IS_IN_SERVICE = "IS_IN_SERVICE";
 
-        ColumnTypes PHONE_NUMBER_TYPE = ColumnTypes.LONG;
-        ColumnTypes IS_IN_SERVICE_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes PHONE_NUMBER_TYPE = LONG;
+        ColumnTypes IS_IN_SERVICE_TYPE = INTEGER;
     }
 
     interface PhoneProduct {
@@ -53,8 +73,8 @@ interface TableConstants {
         String MEID = "MEID";
         String P_STATUS = "P_STATUS";
 
-        ColumnTypes MEID_TYPE = ColumnTypes.LONG;
-        ColumnTypes P_STATUS_TYPE = ColumnTypes.STRING;
+        ColumnTypes MEID_TYPE = LONG;
+        ColumnTypes P_STATUS_TYPE = STRING;
 
     }
 
@@ -71,16 +91,16 @@ interface TableConstants {
         String BASE_RATE = "BASE_RATE";
         String IS_RESIDENTIAL = "IS_RESIDENTIAL";
 
-        ColumnTypes P_TYPE_TYPE = ColumnTypes.STRING;
-        ColumnTypes HARD_LIMIT_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes LIMIT_TEXTS_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes LIMIT_CALLS_SECONDS_TYPE = ColumnTypes.INTEGER;
-        ColumnTypes LIMIT_INTERNET_MEGABYTES_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes P_TYPE_TYPE = STRING;
+        ColumnTypes HARD_LIMIT_TYPE = INTEGER;
+        ColumnTypes LIMIT_TEXTS_TYPE = INTEGER;
+        ColumnTypes LIMIT_CALLS_SECONDS_TYPE = INTEGER;
+        ColumnTypes LIMIT_INTERNET_MEGABYTES_TYPE = INTEGER;
         ColumnTypes RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes BASE_RATE_TYPE = ColumnTypes.DOUBLE;
-        ColumnTypes IS_RESIDENTIAL_TYPE = ColumnTypes.INTEGER;
+        ColumnTypes IS_RESIDENTIAL_TYPE = INTEGER;
 
     }
 

@@ -3,7 +3,7 @@ package interfaces;
 /**
  *
  */
-public class CeoInterface extends BaseInterface {
+public class AccountantInterface extends BaseInterface {
 
     @Override
     public boolean performTransaction() {
