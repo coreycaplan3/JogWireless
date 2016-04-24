@@ -4,8 +4,10 @@ import java.sql.SQLException;
 
 /**
  * Created by coreycaplan on 4/20/16.
+ * <p></p>
+ * This class represents the database transactions that occur with a customer using his/her device.
  */
-public class CustomerUsageDatabase extends AbstractCustomerDatabase {
+public class CustomerUsageDatabase extends CustomerDatabase {
 
     private DatabaseApi databaseApi;
 
@@ -82,6 +84,5 @@ public class CustomerUsageDatabase extends AbstractCustomerDatabase {
             return false;
         }
     }
-
 
 }

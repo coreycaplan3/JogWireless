@@ -3,13 +3,11 @@ package interfaces;
 import database.CustomerUsageDatabase;
 import validation.FormValidation;
 
-import java.util.jar.Pack200;
-
 /**
  * A theoretical interface that allows customers to use their devices. This includes sending text messages,
  * making phone calls, and using data.
  */
-public class UsePhoneInterface extends CustomerInterface {
+public class UsePhoneInterface extends AbstractCustomerInterface {
 
     private CustomerUsageDatabase customerUsageDatabase;
     private String customerId;
@@ -30,12 +28,18 @@ public class UsePhoneInterface extends CustomerInterface {
             System.out.println("Phone Usage Home Screen:");
             if (customerId == null) {
                 customerId = getCustomerIdFromList();
+                if (customerId == null) {
+                    return true;
+                }
                 getPhoneFromCustomerId();
             } else {
                 System.out.println("Would you like to change the customer that you are impersonating?");
                 boolean choice = FormValidation.getTrueOrFalse();
                 if (choice) {
                     customerId = getCustomerIdFromList();
+                    if(customerId == null) {
+                        return true;
+                    }
                 } else {
                     System.out.println("Would you like to change the phone number that you are using?");
                     choice = FormValidation.getTrueOrFalse();
@@ -50,23 +54,20 @@ public class UsePhoneInterface extends CustomerInterface {
             System.out.printf("%-20s %d\n", "Use the internet", 3);
             int response;
             while (true) {
-                response = FormValidation.getNumericInput("Please select an option:");
-                switch (response) {
-                    case 1:
-                        sendTextMessage();
-                        break;
-                    case 2:
-                        makePhoneCall();
-                        break;
-                    case 3:
-                        useInternet();
-                        break;
-                    default:
-                        System.out.println("Please enter a valid option.");
-                        break;
+                response = FormValidation.getIntegerInput("Please select an option:", 4);
+                if (response == 1) {
+                    sendTextMessage();
+                    break;
+                } else if (response == 2) {
+                    makePhoneCall();
+                    break;
+                } else if (response == 3) {
+                    useInternet();
+                    break;
+                } else {
+                    System.out.println("Please enter a valid option.");
                 }
             }
-
             if (customerId == null) {
                 System.out.println("Returning to the interface selection screen...");
                 System.out.println();
@@ -78,7 +79,8 @@ public class UsePhoneInterface extends CustomerInterface {
     private void getPhoneFromCustomerId() {
         Object[][] customerPhones = customerUsageDatabase.getCustomerPhones(customerId);
         while (true) {
-            int choice = FormValidation.getNumericInput("Please select the phone that you would like to use:");
+            int choice = FormValidation.getIntegerInput("Please select the phone that you would like to use:",
+                    customerPhones.length + 1);
             if (customerUsageDatabase.isCustomerPhoneValid(customerPhones, choice)) {
                 customerPhoneNumber = (long) customerPhones[choice - 1][3];
                 return;
@@ -90,10 +92,31 @@ public class UsePhoneInterface extends CustomerInterface {
 
     private void sendTextMessage() {
         long destPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you would like " +
-                "to send a text message.");
-        String timeSent = FormValidation.getBillingPeriod("Please enter the day, month, and year, that the text was " +
-                "sent.");
-        customerUsageDatabase.sendTextMessage(customerPhoneNumber, destPhoneNumber, "", "" + 1);
+                "to send a text message:");
+        String timeSent = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the text was sent:");
+        String timeReceived = FormValidation.getUsageEndDate(timeSent, 2);
+        int textCount = FormValidation.getIntegerInput("Please enter the amount of texts you would like to send:", 250);
+        for (int i = 0; i < textCount; i++) {
+            customerUsageDatabase.sendTextMessage(customerPhoneNumber, destPhoneNumber, timeSent, timeReceived);
+        }
+    }
+
+    private void makePhoneCall() {
+        long destPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you would like " +
+                "to send a phone call:");
+        String startTime = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the phone " +
+                "call was made:");
+        int callDuration = FormValidation.getIntegerInput("Please enter the duration of the call in seconds:", 10800);
+        String endTime = FormValidation.getUsageEndDate(startTime, callDuration);
+        customerUsageDatabase.sendPhoneCall(customerPhoneNumber, destPhoneNumber, startTime, endTime);
+    }
+
+    private void useInternet() {
+        String usageDate = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the internet " +
+                "was used:");
+        int megabyteAmount = FormValidation.getIntegerInput("Please enter the amount in megabytes that you would like " +
+                "to use:", 10240);
+        customerUsageDatabase.useInternet(customerPhoneNumber, usageDate, megabyteAmount);
     }
 
     @Override

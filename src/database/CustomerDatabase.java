@@ -1,6 +1,7 @@
 package database;
 
-import validation.FormValidation;
+import database.TableConstants.Bill;
+import database.TableConstants.Plans;
 
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -10,23 +11,17 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * An <i>abstract</i> class used for passing on certain methods to the classes that extend it.
+ * Created by Corey Caplan on 4/14/2016
+ * <p></p>
+ * A class that handles the typical transactions that occur between a residential or corporate customer and Jog
+ * Wireless.
  */
-abstract class AbstractCustomerDatabase {
+public class CustomerDatabase {
 
-    private String customerId;
     private DatabaseApi databaseApi;
 
-    AbstractCustomerDatabase() {
+    public CustomerDatabase() {
         databaseApi = DatabaseApi.getInstance();
-    }
-
-    String getCustomerId() {
-        return customerId;
-    }
-
-    DatabaseApi getDatabaseApi() {
-        return databaseApi;
     }
 
     /**
@@ -36,27 +31,29 @@ abstract class AbstractCustomerDatabase {
      * @param billingPeriod The billing period of the bill that should be retrieved. Should be in the format
      *                      "yyyy-MM-dd HH:mm:ss".
      */
-    public void showBillingCharges(int accountId, String billingPeriod) {
+    public void showBillingCharges(String accountId, String billingPeriod) {
         try {
             String query = "SELECT A_ID, BILL_PERIOD, IS_PAID, PLAN, ACCUMULATED_CHARGES\n" +
                     "FROM BILL\n" +
                     "WHERE A_ID = " + accountId + " AND BILL_PERIOD = to_date(\'" + billingPeriod + "\', " +
                     "'YYYY-MM-DD HH24:MI:SS')";
             ResultSet resultSet = databaseApi.executeQuery(query);
-            if (ResultSetHelper.isResultSetValid(resultSet)) {
+            if (ResultSetHelper.isResultSetValid(resultSet, "Sorry, no bills were found for the given billing " +
+                    "period.")) {
                 System.out.printf("%-15s %-20s %-15s %-50s %-20s\n", "Account ID", "Bill Period", "Paid Yet?", "Plan",
                         "Accumulated Charges");
                 resultSet.next();
-                Date date = resultSet.getDate(TableConstants.Bill.BILL_PERIOD);
+                Date date = resultSet.getDate(Bill.BILL_PERIOD);
                 String formattedDate = String.format(Locale.US, "%tB, %tY", date, date);
-                String isPaid = String.valueOf(resultSet.getInt(TableConstants.Bill.IS_PAID) == 1);
+                String isPaid = String.valueOf(resultSet.getInt(Bill.IS_PAID) == 1);
                 if (isPaid.charAt(0) == 't') {
                     isPaid = "True";
                 } else {
                     isPaid = "False";
                 }
-                System.out.printf("%-15s %-20s %-15s %-50s %.2f\n", resultSet.getInt(TableConstants.Bill.A_ID), formattedDate, isPaid,
-                        resultSet.getString(TableConstants.Bill.PLAN), resultSet.getDouble(TableConstants.Bill.ACCUMULATED_CHARGES));
+                System.out.printf("%-15s %-20s %-15s %-50s %.2f\n", resultSet.getInt(Bill.A_ID),
+                        formattedDate, isPaid,
+                        resultSet.getString(Bill.PLAN), resultSet.getDouble(Bill.ACCUMULATED_CHARGES));
                 System.out.println();
             }
         } catch (SQLException e) {
@@ -67,18 +64,17 @@ abstract class AbstractCustomerDatabase {
     /**
      * @param desiredPlan The plan to which the user would like to switch.
      * @param accountId   The account ID of the account whose plan should be changed.
-     * @return True if the change processed successfully or false if it did not.
      */
-    public boolean changePlan(String desiredPlan, int accountId) {
+    public void changePlan(String desiredPlan, String accountId) {
         String query = "update ACCOUNT\n" +
                 "set CURRENT_PLAN = \'" + desiredPlan + "\'\n" +
                 "where A_ID = " + accountId;
         try {
             databaseApi.executeQuery(query);
-            return true;
+            System.out.println("Your desired plan has been changed and the effects will take place during the next " +
+                    "billing cycle.");
         } catch (SQLException e) {
             System.out.println("There was an error processing your request.");
-            return false;
         }
     }
 
@@ -90,7 +86,7 @@ abstract class AbstractCustomerDatabase {
      * and the 2nd column is the current plan. Can be <b>null</b> if there are no accounts that the given customer owns
      * or there was an error processing the transaction.
      */
-    public String[][] getAccountsWhereCustomerIsOwner(int customerId) {
+    public String[][] getAccountsWhereCustomerIsOwner(String customerId) {
         String query = "SELECT\n" +
                 "  A_ID,\n" +
                 "  PRIMARY_NUMBER,\n" +
@@ -101,7 +97,7 @@ abstract class AbstractCustomerDatabase {
                 "      AND IS_OWNER = 1";
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
-            if (!ResultSetHelper.isResultSetValid(resultSet)) {
+            if (!ResultSetHelper.isResultSetValid(resultSet, "Sorry, you don\'t own any accounts!")) {
                 return null;
             }
 
@@ -122,19 +118,6 @@ abstract class AbstractCustomerDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
-        }
-    }
-
-    @SuppressWarnings("Duplicates")
-    private int pickNewPhone() {
-        Object[][] phonesForSale = getPhoneModelsForSale();
-        while (true) {
-            int desiredPhone = FormValidation.getNumericInput("Please enter the Phone ID of the phone you would like to buy:");
-            if (desiredPhone >= 1 && desiredPhone <= phonesForSale.length) {
-                return desiredPhone;
-            } else {
-                System.out.println("Please enter a valid phone choice.");
-            }
         }
     }
 
@@ -169,46 +152,6 @@ abstract class AbstractCustomerDatabase {
     }
 
     /**
-     * Gets all of the accounts that the customer owns.
-     *
-     * @param customerId The id of the customer whose accounts should be retrieved.
-     * @return The result set in the form of a 2d array of objects.
-     */
-    public Object[][] getCustomerAccounts(String customerId) {
-        String query = "SELECT\n" +
-                "  A_ID,\n" +
-                "  NAME,\n" +
-                "  PRIMARY_NUMBER\n" +
-                "FROM account\n" +
-                "  NATURAL JOIN SUBSCRIBES\n" +
-                "  NATURAL JOIN CUSTOMER\n" +
-                "WHERE IS_OWNER = 1 AND c_id = " + customerId;
-        try {
-            ResultSet resultSet = databaseApi.executeQuery(query);
-            if (!ResultSetHelper.isResultSetValid(resultSet)) {
-                System.out.println("Sorry, you do not own any accounts, so you can\'t add any new customers.");
-                return null;
-            } else {
-                List<String> columnNames = new ArrayList<>();
-                columnNames.add(TableConstants.Account.A_ID);
-                columnNames.add(TableConstants.Customer.NAME);
-                columnNames.add(TableConstants.Account.PRIMARY_NUMBER);
-
-                List<ColumnTypes> columnTypes = new ArrayList<>();
-                columnTypes.add(TableConstants.Account.A_ID_TYPE);
-                columnTypes.add(TableConstants.Customer.NAME_TYPE);
-                columnTypes.add(TableConstants.Account.PRIMARY_NUMBER_TYPE);
-
-                ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
-                return resultSetHelper.printResults(30);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    /**
      * Adds a customer to the given account.
      *
      * @param customerId      The customer's ID if it's an existing customer or <b>-1</b> if the customer is new.
@@ -217,27 +160,23 @@ abstract class AbstractCustomerDatabase {
      * @param desiredPhone    The phone type that the user would like to purchase.
      * @param accountId       The account ID of the account to which the user would like to be added.
      * @param storeNumber     The store number from which the user is performing this transaction.
-     * @return True if the transaction occurred successfully or false if there was an error.
      */
-    public boolean addCustomerToAccount(int customerId, String customerName, String customerAddress, int desiredPhone,
-                                        int accountId, int storeNumber) {
+    public void addCustomerToAccount(String customerId, String customerName, String customerAddress, int desiredPhone,
+                                     String accountId, int storeNumber) {
         String query = "{call ADD_CUSTOMER_TO_ACCOUNT(" + customerId + ", \'" + customerName + "\', \'" +
                 customerAddress + "\', " + desiredPhone + ", " + accountId + ", " + storeNumber + ")}";
         try {
             databaseApi.executeProcedure(query);
-            return true;
+            System.out.println("Successfully added " + customerName + " to your account!");
         } catch (SQLException e) {
             if (e.getErrorCode() == -20000) {
                 System.out.println("There are no more valid phone numbers! Jog needs to buy more numbers!");
             } else if (e.getErrorCode() == -20001) {
                 System.out.println("Jog is out of stock of that model phone. Pick a different phone!");
-                desiredPhone = pickNewPhone();
-                return addCustomerToAccount(customerId, customerName, customerAddress, desiredPhone, accountId,
-                        storeNumber);
+                //TODO fixme
             } else {
                 System.out.println("There was an error adding the customer to your account!");
             }
-            return false;
         }
     }
 
@@ -249,38 +188,25 @@ abstract class AbstractCustomerDatabase {
      * @param desiredPhoneType The desired phone type of the user.
      * @param storeNumber      The store number from which the user is buying the phone.
      * @param customerPlan     The plan on which the customer would like to be.
-     * @return True if the account creation was successful.
      */
-    public boolean createAccount(String name, String address, int desiredPhoneType, int storeNumber,
-                                 String customerPlan) {
+    public void createAccount(String name, String address, int desiredPhoneType, int storeNumber,
+                              String customerPlan) {
         String sql = "{call CREATE_NEW_ACCOUNT(\'" + name + "\', \'" + address + "\', " + desiredPhoneType + ", " +
                 storeNumber + ", \'" + customerPlan + "\')}";
         try {
             databaseApi.executeProcedure(sql);
-            return true;
+            System.out.println("Your account has been successfully created!");
         } catch (SQLException e) {
             switch (e.getErrorCode()) {
                 case -20000:
-                    System.out.println("Error: There are no more valid phone numbers! Jog needs to buy more phone " +
+                    System.out.println("Sorry, There are no more valid phone numbers! Jog needs to buy more phone " +
                             "numbers!");
-                    break;
                 case -20001:
                     System.out.println("Sorry, Jog is out of stock of that phone model. Please pick a different phone!");
-                    Object[][] phonesForSale = getPhoneModelsForSale();
-                    while (true) {
-                        int response = FormValidation.getNumericInput("Please select a phone:");
-                        if (response - 1 >= phonesForSale.length || response - 1 < 0) {
-                            System.out.println("Please enter a valid phone model.");
-                        } else {
-                            return createAccount(name, address, response - 1, storeNumber, customerPlan);
-                        }
-                    }
                 default:
                     System.out.println("Oops: An error occurred!");
                     e.printStackTrace();
-                    break;
             }
-            return false;
         }
     }
 
@@ -289,9 +215,8 @@ abstract class AbstractCustomerDatabase {
      *
      * @param meid       The meid of the phone that was stolen.
      * @param reportType 0 if the phone was stolen, 1 if it was lost, or 2 if it was found
-     * @return True if the transaction was successful.
      */
-    private boolean reportPhone(long meid, int reportType) {
+    private void reportPhone(long meid, int reportType) {
         String query;
         if (reportType == 0) {
             query = "UPDATE PHONE_PRODUCT\n" +
@@ -310,10 +235,20 @@ abstract class AbstractCustomerDatabase {
         }
         try {
             databaseApi.executeQuery(query);
-            return true;
+            if (reportType == 0) {
+                System.out.println("Your phone as been successfully reported as stolen.");
+                System.out.println("We here at Jog are sorry for the inconvenience, but you will " +
+                        "still have to pay more money for a new phone!");
+            } else if (reportType == 1) {
+                System.out.println("Your phone as been successfully reported as lost.");
+                System.out.println("We here at Jog are sorry for the inconvenience, but you will " +
+                        "still have to pay more money for a new phone!");
+            } else {
+                System.out.println("Your phone as been successfully reported as found!");
+                System.out.println("We here at Jog are glad that you were able to find your phone!");
+            }
         } catch (SQLException e) {
             System.out.println("Error executing update!");
-            return false;
         }
     }
 
@@ -347,7 +282,7 @@ abstract class AbstractCustomerDatabase {
                 "WHERE C_ID = " + customerId;
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
-            if (ResultSetHelper.isResultSetValid(resultSet)) {
+            if (ResultSetHelper.isResultSetValid(resultSet, "Sorry, you don\'t own any phones!")) {
                 List<String> columnNames = new ArrayList<>();
                 columnNames.add(TableConstants.PhoneProduct.MEID);
                 columnNames.add(TableConstants.PhoneModel.MANUFACTURER);
@@ -393,52 +328,49 @@ abstract class AbstractCustomerDatabase {
      * Reports a given phone as stolen.
      *
      * @param phoneToReport The phone that the user would like to report.
-     * @return True if the report was successful.
      */
-    public boolean reportStolenPhone(Object[] phoneToReport) {
-        return reportPhone((Long) phoneToReport[0], 0);
+    public void reportStolenPhone(Object[] phoneToReport) {
+        reportPhone((Long) phoneToReport[0], 0);
     }
 
     /**
      * Reports a given phone as lost.
      *
      * @param phoneToReport The phone that the user would like to report.
-     * @return True if the report was successful.
      */
-    public boolean reportLostPhone(Object[] phoneToReport) {
-        return reportPhone((Long) phoneToReport[0], 1);
+    public void reportLostPhone(Object[] phoneToReport) {
+        reportPhone((Long) phoneToReport[0], 1);
     }
 
     /**
      * Reports a given phone as found.
      *
      * @param phoneToReport The phone that the user would like to report.
-     * @return True if the report was successful.
      */
-    public boolean reportFoundPhone(Object[] phoneToReport) {
-        return reportPhone((Long) phoneToReport[0], 2);
+    public void reportFoundPhone(Object[] phoneToReport) {
+        reportPhone((Long) phoneToReport[0], 2);
     }
 
     /**
      * Allows the user to buy a new phone.
      *
-     * @param phoneType The type of phone that should be bought, in place of the old phone.
-     * @param id        The ID of the customer who is buying a phone.
-     * @return True if the purchase was successful.
+     * @param phoneType  The type of phone that should be bought, in place of the old phone.
+     * @param customerId The ID of the customer who is buying a phone.
      */
-    public boolean replaceNewPhone(int phoneType, String id, long oldPhoneMeid, long phoneNumber, int storeNumber) {
-        String sql = "{call CUSTOMER_REPLACES_NEW_PHONE(" + phoneType + ", " + id + ", " + oldPhoneMeid + ", " +
+    public void replaceNewPhone(int phoneType, String customerId, long oldPhoneMeid, long phoneNumber, int storeNumber) {
+        String sql = "{call CUSTOMER_REPLACES_NEW_PHONE(" + phoneType + ", " + customerId + ", " + oldPhoneMeid + ", " +
                 phoneNumber + ", " + storeNumber + ")}";
         try {
             databaseApi.executeProcedure(sql);
-            return true;
+            System.out.println("Your phone was upgraded successfully!");
+            System.out.println("Thank you for shopping with Jog!");
         } catch (SQLException e) {
             switch (e.getErrorCode()) {
                 case -20000:
                     System.out.println("Error: Invalid phone entered!");
                     break;
                 case -20001:
-                    System.out.println("Error: There are no customers with ID " + id + " that have a phone number!");
+                    System.out.println("Error: There are no customers with ID " + customerId + " that have a phone number!");
                     break;
                 case -20002:
                     System.out.println("Sorry, there are no more phones of this model in stock.");
@@ -450,7 +382,6 @@ abstract class AbstractCustomerDatabase {
                     e.printStackTrace();
                     break;
             }
-            return false;
         }
     }
 
@@ -474,8 +405,14 @@ abstract class AbstractCustomerDatabase {
      */
     public Object[][] getPhoneModelsForSale() {
         try {
-            String query = "SELECT * FROM PHONE_MODEL";
+            String query = "SELECT DISTINCT PHONE_ID, MANUFACTURER, MODEL " +
+                    "FROM PHONE_MODEL NATURAL JOIN PHONE_PRODUCT " +
+                    "WHERE P_STATUS = 'STOCKED";
             ResultSet resultSet = databaseApi.executeQuery(query);
+
+            if (ResultSetHelper.isResultSetValid(resultSet, "Sorry, Jog is out of stock of that phone!")) {
+                return null;
+            }
 
             List<ColumnTypes> columnTypes = new ArrayList<>();
             columnTypes.add(TableConstants.PhoneModel.PHONE_ID_TYPE);
@@ -509,7 +446,7 @@ abstract class AbstractCustomerDatabase {
         String sql = "SELECT * FROM CUSTOMER WHERE NAME LIKE \'%" + name + "%\' ORDER BY NAME";
         try {
             ResultSet resultSet = databaseApi.executeQuery(sql);
-            if (!ResultSetHelper.isResultSetValid(resultSet)) {
+            if (!ResultSetHelper.isResultSetValid(resultSet, "No customers found with the name " + name)) {
                 return null;
             } else {
                 List<String> columnNames = new ArrayList<>();
@@ -551,6 +488,103 @@ abstract class AbstractCustomerDatabase {
             }
         }
         return false;
+    }
+
+    /**
+     * @param isResidential True if the plans being requested are residential, or false if they're corporate.
+     * @return A 2d array of strings containing the plan name in the 0 column and a description in the 1st. Can be
+     * <b>null</b> if there was an error performing the transaction.
+     */
+    public String[][] getAvailablePlans(boolean isResidential) {
+        try {
+            int residential = isResidential ? 1 : 0;
+            String query = "SELECT *\n" +
+                    "FROM PLANS\n" +
+                    "WHERE IS_RESIDENTIAL = " + residential;
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            ArrayList<String> planDescriptions = new ArrayList<>();
+            ArrayList<String> planNames = new ArrayList<>();
+
+            while (resultSet.next()) {
+                String planName = resultSet.getString(Plans.P_TYPE);
+                int hardLimit = resultSet.getInt(Plans.HARD_LIMIT);
+                int limitTexts = resultSet.getInt(Plans.LIMIT_TEXTS);
+                int limitCalls = resultSet.getInt(Plans.LIMIT_CALLS_SECONDS);
+                int limitInternet = resultSet.getInt(Plans.LIMIT_INTERNET_MEGABYTES);
+                double rateTexts = resultSet.getDouble(Plans.RATE_TEXTS);
+                double rateCalls = resultSet.getDouble(Plans.RATE_CALLS_SECONDS);
+                double rateInternet = resultSet.getDouble(Plans.RATE_INTERNET_MEGABYTES);
+                double overdraftRateTexts = resultSet.getDouble(Plans.OVERDRAFT_RATE_TEXTS);
+                double overdraftRateCalls = resultSet.getDouble(Plans.OVERDRAFT_RATE_CALLS_SECONDS);
+                double overdraftRateInternet = resultSet.getDouble(Plans.OVERDRAFT_RATE_INTERNET_MEGABYTES);
+                double baseRate = resultSet.getDouble(Plans.BASE_RATE);
+
+                PlanParser planParser = new PlanParser(planName, hardLimit, limitTexts, limitCalls, limitInternet,
+                        rateTexts, rateCalls, rateInternet, overdraftRateTexts, overdraftRateCalls,
+                        overdraftRateInternet, baseRate);
+                planDescriptions.add(planParser.parse());
+                planNames.add(planName);
+            }
+
+            String[][] planInformation = new String[planDescriptions.size()][2];
+            for (int i = 0; i < planInformation.length; i++) {
+                planInformation[i][0] = planNames.get(i);
+                planInformation[i][1] = planDescriptions.get(i);
+            }
+            return planInformation;
+        } catch (SQLException e) {
+            System.out.println("Error processing transaction...");
+            return null;
+        }
+    }
+
+    /**
+     * Gets all of the given account's unpaid bills, if there are any.
+     *
+     * @param accountId The account ID of the account whose unpaid bills should be retrieved.
+     * @return A 2d array of objects containing the results of the query. The bill id will be in the 0 column. This
+     * method can return <b>null</b> if the query fails to execute or there are no results found.
+     */
+    public Object[][] getUnpaidBills(String accountId) {
+        ArrayList<String> columnNames = new ArrayList<>();
+        columnNames.add(Bill.BILL_ID);
+        columnNames.add(Bill.BILL_PERIOD);
+        columnNames.add(Bill.PLAN);
+        columnNames.add(Bill.ACCUMULATED_CHARGES);
+        String query = "SELECT " + columnNames.get(0) + ", " + columnNames.get(1) + ", " + columnNames.get(2) +
+                ", " + columnNames.get(3) + " " +
+                "FROM BILL " +
+                "WHERE A_ID = " + accountId;
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            ArrayList<ColumnTypes> columnTypes = new ArrayList<>();
+            columnTypes.add(Bill.BILL_ID_TYPE);
+            columnTypes.add(Bill.BILL_PERIOD_TYPE);
+            columnTypes.add(Bill.PLAN_TYPE);
+            columnTypes.add(Bill.ACCUMULATED_CHARGES_TYPE);
+
+            ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
+            if (ResultSetHelper.isResultSetValid(resultSet, "You have no unpaid bills!")) {
+                return null;
+            } else {
+                return resultSetHelper.printResults(20);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("There was an error retrieving your unpaid bills!");
+            return null;
+        }
+    }
+
+    public void payBill(int billId) {
+        String query = "update bill set is_paid = 1 where bill_id = " + billId;
+        try {
+            databaseApi.executeInsertOrUpdate(query);
+            System.out.println("You successfully paid your bill!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("There was an error paying your bill!");
+        }
     }
 
 }

@@ -5,7 +5,7 @@ import validation.FormValidation;
 /**
  * An interface used to represent a new business opening an account with Jog.
  */
-public class NewBusinessInterface extends CustomerInterface {
+public class NewBusinessInterface extends AbstractCustomerInterface {
 
     private String customerId;
 

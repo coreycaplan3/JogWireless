@@ -7,9 +7,13 @@ import java.sql.*;
  */
 final class DatabaseApi {
 
-    private static DatabaseApi sDatabaseApi;
+    private static DatabaseApi databaseApi;
 
     private Database database;
+
+    private DatabaseApi(String username, String password) {
+        database = new Database(username, password);
+    }
 
     /**
      * Should be called when the program is first started to initialize the {@link DatabaseApi} class.
@@ -21,31 +25,25 @@ final class DatabaseApi {
      * @see #getInstance()
      */
     static boolean initializeInstance(String username, String password) {
-        sDatabaseApi = new DatabaseApi(username, password);
-        return sDatabaseApi.connectToDatabase();
+        databaseApi = new DatabaseApi(username, password);
+        if (databaseApi.connectToDatabase()) {
+            databaseApi.logout();
+            return true;
+        } else {
+            databaseApi.logout();
+            return false;
+        }
     }
 
     /**
      * @return An instance of {@link DatabaseApi} after a call to {@link #initializeInstance(String, String)}}.
      */
     static DatabaseApi getInstance() {
-        if (sDatabaseApi == null) {
+        if (databaseApi == null) {
             throw new IllegalStateException("The DatabaseApi should have been initialized with a call to " +
                     "initializeInstance()");
         }
-        return sDatabaseApi;
-    }
-
-    void logout() {
-        try {
-            database.databaseConnection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private DatabaseApi(String username, String password) {
-        database = new Database(username, password);
+        return databaseApi;
     }
 
     /**
@@ -65,8 +63,22 @@ final class DatabaseApi {
      * @throws SQLException
      */
     ResultSet executeQuery(String query) throws SQLException {
-        Statement statement = database.databaseConnection.createStatement();
-        return statement.executeQuery(query);
+        Statement statement = login();
+        ResultSet resultSet = statement.executeQuery(query);
+        database.databaseConnection.commit();
+        logout();
+        return resultSet;
+    }
+
+    /**
+     * Executes an insert or update on the Jog Wireless database.
+     *
+     * @param query The query to be executed.
+     * @return A long containing the update count for the query.
+     */
+    long executeInsertOrUpdate(String query) throws SQLException {
+        database.establishConnection();
+        return database.databaseConnection.createStatement().executeLargeUpdate(query);
     }
 
     /**
@@ -77,8 +89,30 @@ final class DatabaseApi {
      * @throws SQLException
      */
     boolean executeProcedure(String procedure) throws SQLException {
+        database.establishConnection();
         CallableStatement statement = database.databaseConnection.prepareCall(procedure);
-        return statement.execute();
+        boolean retVal = statement.execute();
+        database.databaseConnection.commit();
+        logout();
+        return retVal;
+    }
+
+    Statement login() {
+        database.establishConnection();
+        try {
+            return database.databaseConnection.createStatement();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    void logout() {
+        try {
+            database.databaseConnection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -105,10 +139,8 @@ final class DatabaseApi {
                 databaseConnection = DriverManager.getConnection(CSE_URL, username, password);
                 return true;
             } catch (SQLException e) {
-//                e.printStackTrace();
                 return false;
             } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
                 return false;
             }
         }

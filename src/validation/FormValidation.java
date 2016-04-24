@@ -1,5 +1,7 @@
 package validation;
 
+import java.util.Calendar;
+import java.util.Locale;
 import java.util.Scanner;
 
 /**
@@ -13,17 +15,41 @@ public final class FormValidation {
     }
 
     /**
-     * This method loops indefinitely until the user enters a valid number.
+     * This method loops indefinitely until the user enters a valid integer.
      *
      * @param prompt The prompt to display to the user before requesting information.
-     * @return A number that the user entered.
+     * @return An integer that the user entered.
      */
-    public static int getNumericInput(String prompt) {
+    public static int getIntegerInput(String prompt, int maxNumber) {
         while (true) {
             System.out.println(prompt);
             String s = scanner.nextLine();
             if (isNumberValid(s)) {
-                return Integer.parseInt(s);
+                if (Integer.parseInt(s) < maxNumber) {
+                    return Integer.parseInt(s);
+                } else {
+                    System.out.println("Please enter a number that is less than " + maxNumber);
+                }
+            }
+        }
+    }
+
+    /**
+     * This method loops indefinitely until the user enters a valid double.
+     *
+     * @param prompt The prompt to display to the user before requesting information.
+     * @return A double that the user entered.
+     */
+    public static double getDoubleInput(String prompt, int maxNumber) {
+        while (true) {
+            System.out.println(prompt);
+            String s = scanner.nextLine();
+            if (isNumberValid(s)) {
+                if (Double.parseDouble(s) < maxNumber) {
+                    return Double.parseDouble(s);
+                } else {
+                    System.out.println("Please enter a number that is less than " + maxNumber);
+                }
             }
         }
     }
@@ -35,7 +61,7 @@ public final class FormValidation {
      */
     public static boolean getTrueOrFalse() {
         while (true) {
-            int choice = getNumericInput("Please enter 0 for no or 1 for yes.");
+            int choice = getIntegerInput("Please enter 0 for no or 1 for yes.", 2);
             if (choice != 0 && choice != 1) {
                 System.out.println("Please enter a valid option.");
             } else {
@@ -95,20 +121,24 @@ public final class FormValidation {
     public static String getBillingPeriod(String prompt) {
         System.out.println(prompt);
         while (true) {
-            System.out.println("Please enter the date in the form of yyyy-MM:");
+            System.out.println("Please enter the date in the form of \"yyyy-MM\"");
             String billingPeriod = scanner.nextLine().trim();
             if (billingPeriod.length() != 7) {
                 System.out.println("Incorrect formatting of the date.");
             } else {
-                if (isDateValid(billingPeriod)) {
+                if (isDateValid(billingPeriod, false)) {
                     return billingPeriod + "-01 00:00:00";
                 }
             }
         }
     }
 
-    private static boolean isDateValid(String dateToCheck) {
+    private static boolean isDateValid(String dateToCheck, boolean containsDay) {
         //Assumes the proper formatting is "yyyy-MM-dd"
+        if (dateToCheck.length() != 7 || dateToCheck.length() != 10) {
+            System.out.println("Please enter the date with valid formatting.");
+            return false;
+        }
         try {
             int year = Integer.parseInt(dateToCheck.substring(0, 4));
             int month = Integer.parseInt(dateToCheck.substring(5, 7));
@@ -123,6 +153,20 @@ public final class FormValidation {
             if (dateToCheck.charAt(4) != '-') {
                 System.out.println("Please be sure to enter the \"-\" between the year and the month.");
                 return false;
+            }
+            if (containsDay) {
+                if (dateToCheck.length() != 10) {
+                    System.out.println("Please enter the date with valid formatting.");
+                    return false;
+                }
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, month);
+
+                int day = Integer.parseInt(dateToCheck.substring(8, 10));
+                if (day < 1 || day > calendar.getMaximum(Calendar.DAY_OF_MONTH)) {
+                    System.out.println("Please enter a valid day.");
+                }
             }
             return true;
         } catch (NumberFormatException e) {
@@ -158,24 +202,93 @@ public final class FormValidation {
     }
 
     /**
-     * Gets a start and end date from the user that can be used for any of the usage tables. The
+     * Gets a start date and time that can be read by the database. The String takes the form as
+     * "yyyy-MM-dd HH24:mi:ss" so it an be converted to an SQL date object.
      *
      * @param prompt The prompt that should be displayed to the user.
-     * @return A String array containing the start date and end date in the 0 and 1st index respectively.
+     * @return A String containing the start date in the form "yyyy-MM-dd HH:mm:ss".
      */
-    public static String[] getUsageDate(String prompt) {
+    public static String getUsageStartDate(String prompt) {
         System.out.println(prompt);
         System.out.println("The date must be in the form \"yyyy-MM-dd\" in order to be valid.");
         while (true) {
             String usageDate = scanner.nextLine().trim();
-            if (isDateValid(usageDate)) {
-                int randomHour = (int) (Math.random() * 12) + 10;
-                int randomMinute = (int) (Math.random() * 50);
-                int randomSecond = (int) (Math.random() * 20);
-                usageDate += (randomHour + "") + ()
-                return usageDate;
+            if (isDateValid(usageDate, true)) {
+                int year = Integer.parseInt(usageDate.substring(0, 4));
+                int month = Integer.parseInt(usageDate.substring(5, 7));
+                int day = Integer.parseInt(usageDate.substring(8, 10));
+                int randomHour = (int) (Math.random() * 24);
+                int randomMinute = (int) (Math.random() * 60);
+                int randomSecond = (int) (Math.random() * 60);
+
+                Calendar startDate = Calendar.getInstance();
+                startDate.set(Calendar.YEAR, year);
+                startDate.set(Calendar.MONTH, month);
+                startDate.set(Calendar.DAY_OF_MONTH, day);
+                startDate.set(Calendar.HOUR_OF_DAY, randomHour);
+                startDate.set(Calendar.MINUTE, randomMinute);
+                startDate.set(Calendar.SECOND, randomSecond);
+
+                return getFullDateForDatabase(startDate);
             }
         }
+    }
+
+    /**
+     * Parses the startDate and returns an appropriate end date formatted for the database in the form
+     * "yyyy-MM-dd HH:mm:ss"
+     *
+     * @param startDate       A sanitized start date in proper database format.
+     * @param durationSeconds The distance between the start date and end date in seconds.
+     * @return A formatted string that contains the same time as the inputted start date plus the number of seconds
+     * added.
+     */
+    public static String getUsageEndDate(String startDate, int durationSeconds) {
+        int year = Integer.parseInt(startDate.substring(0, 4));
+        int month = Integer.parseInt(startDate.substring(5, 7));
+        int day = Integer.parseInt(startDate.substring(8, 10));
+        int hour = Integer.parseInt(startDate.substring(11, 13));
+        int minute = Integer.parseInt(startDate.substring(14, 16));
+        int second = Integer.parseInt(startDate.substring(17, 19));
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.YEAR, year);
+        calendar.set(Calendar.MONTH, month);
+        calendar.set(Calendar.DAY_OF_MONTH, day);
+        calendar.set(Calendar.HOUR_OF_DAY, hour);
+        calendar.set(Calendar.MINUTE, minute);
+        calendar.set(Calendar.SECOND, second);
+        calendar.setTimeInMillis(calendar.getTimeInMillis() + (durationSeconds * 1000));
+        return getFullDateForDatabase(calendar);
+    }
+
+    /**
+     * @param calendar A {@link Calendar} object that holds the event's "calendar" date.
+     * @return A String in the form of "2015-01-19 02:45:00" for the database.
+     */
+    public static String getFullDateForDatabase(Calendar calendar) {
+        return getOnlyDateForDatabase(calendar) + " " + getOnlyTimeForDatabase(calendar);
+    }
+
+    /**
+     * Parses a given {@link Calendar} object to match the format that the database expects.
+     *
+     * @param calendar The {@link Calendar} object that needs to be parsed.
+     * @return A formatted String that meets the formatting specifications of the database in the
+     * form of "2015-01-19".
+     */
+    private static String getOnlyDateForDatabase(Calendar calendar) {
+        return String.format(Locale.US, "%1$tY-%1$tm-%1$td", calendar);
+    }
+
+    /**
+     * Parses a given {@link Calendar} object's time field to match the format that the database expects.
+     *
+     * @param calendar The {@link Calendar} object that needs to be parsed.
+     * @return The time in the form of a String, like "02:45:00".
+     */
+    private static String getOnlyTimeForDatabase(Calendar calendar) {
+        return String.format("%1$tH:%1$tM:%1$tS", calendar);
     }
 
 }

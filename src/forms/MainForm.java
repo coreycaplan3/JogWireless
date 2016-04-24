@@ -37,7 +37,7 @@ public class MainForm {
             System.out.printf("%-75s %d\n", "Send text messages, make phone calls, or use the internet as any " +
                     "customer", 7);
             System.out.printf("%-75s %d\n", "Quit this program", -1);
-            int response = FormValidation.getNumericInput("");
+            int response = FormValidation.getIntegerInput("", 10);
             if (response == -1) {
                 break;
             } else if (response >= 1 && response <= 7) {

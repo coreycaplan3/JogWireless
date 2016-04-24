@@ -88,6 +88,9 @@ interface TableConstants {
         String RATE_TEXTS = "RATE_TEXTS";
         String RATE_CALLS_SECONDS = "RATE_CALLS_SECONDS";
         String RATE_INTERNET_MEGABYTES = "RATE_INTERNET_MEGABYTES";
+        String OVERDRAFT_RATE_TEXTS = "OVERDRAFT_RATE_TEXTS";
+        String OVERDRAFT_RATE_CALLS_SECONDS = "OVERDRAFT_RATE_CALLS_SECONDS";
+        String OVERDRAFT_RATE_INTERNET_MEGABYTES = "OVERDRAFT_RATE_INTERNET_MEGABYTES";
         String BASE_RATE = "BASE_RATE";
         String IS_RESIDENTIAL = "IS_RESIDENTIAL";
 
@@ -99,6 +102,9 @@ interface TableConstants {
         ColumnTypes RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes OVERDRAFT_RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes OVERDRAFT_RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes OVERDRAFT_RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes BASE_RATE_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes IS_RESIDENTIAL_TYPE = INTEGER;
 

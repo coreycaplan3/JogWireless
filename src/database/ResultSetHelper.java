@@ -131,10 +131,10 @@ final class ResultSetHelper {
      * @param resultSet The result set to verify.
      * @return True if it's valid and its fetch size is greater than 0. False if it's invalid.
      */
-    static boolean isResultSetValid(ResultSet resultSet) {
+    static boolean isResultSetValid(ResultSet resultSet, String errorMessage) {
         try {
             if (!resultSet.isBeforeFirst()) {
-                System.out.println("No results found!");
+                System.out.println(errorMessage);
                 return false;
             } else {
                 return true;
