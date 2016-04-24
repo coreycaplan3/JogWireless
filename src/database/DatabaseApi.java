@@ -31,6 +31,7 @@ final class DatabaseApi {
             return true;
         } else {
             databaseApi.logout();
+            databaseApi = null;
             return false;
         }
     }
