@@ -81,8 +81,8 @@ public final class FormValidation {
         while (true) {
             System.out.println(prompt);
             String s = scanner.nextLine();
-            if (s.contains("\'") || s.contains("\"") || s.contains("\\")) {
-                System.out.println("Please enter a valid " + desiredResult);
+            if (!isValidString(s)) {
+                System.out.println("Invalid character detected! Please enter a valid " + desiredResult);
             } else if (s.length() < 2) {
                 System.out.println("Sorry, your input was too short.");
             } else if (s.length() >= maxLength) {
@@ -91,6 +91,15 @@ public final class FormValidation {
                 return s;
             }
         }
+    }
+
+    private static boolean isValidString(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            if (!Character.isLetterOrDigit(s.charAt(i)) && !Character.isSpaceChar(s.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
