@@ -36,6 +36,8 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         } catch (SQLException e) {
             System.out.println("Error sending text message...");
             return false;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -60,6 +62,8 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         } catch (SQLException e) {
             System.out.println("Error sending phone call...");
             return false;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -82,6 +86,8 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         } catch (SQLException e) {
             System.out.println("Error sending text message...");
             return false;
+        } finally {
+            databaseApi.logout();
         }
     }
 

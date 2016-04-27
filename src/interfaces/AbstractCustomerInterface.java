@@ -31,7 +31,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
                 prompt = "Please enter the name of the owner of the business:";
             }
             String name = FormValidation.getStringInput(prompt, "name", 250);
-            ArrayList<Integer> customerIdList = customerDatabase.getCustomerIdsForName(name);
+            Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
             if (customerIdList != null) {
                 System.out.println();
                 if (isResidential()) {
@@ -218,7 +218,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             while (true) {
                 name = FormValidation.getStringInput("Please enter the name of the customer you would like " +
                         "to find:", "name", 250);
-                ArrayList<Integer> customerIdList = customerDatabase.getCustomerIdsForName(name);
+                Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
                 if (customerIdList != null) {
                     int customerId = FormValidation.getIntegerInput("Please enter the customer\'s ID from the list " +
                             "or enter -1 to research:", 1000000);

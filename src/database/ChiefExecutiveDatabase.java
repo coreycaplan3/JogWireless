@@ -35,6 +35,8 @@ public class ChiefExecutiveDatabase {
             System.out.println();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -50,6 +52,8 @@ public class ChiefExecutiveDatabase {
             System.out.println();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -86,6 +90,8 @@ public class ChiefExecutiveDatabase {
             System.out.println();
         } catch (SQLException e) {
             e.printStackTrace();
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -136,6 +142,8 @@ public class ChiefExecutiveDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("There was an error creating your new billing plan.");
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -195,6 +203,27 @@ public class ChiefExecutiveDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        } finally {
+            databaseApi.logout();
+        }
+    }
+
+    /**
+     * Creates a new phone to be added to Jog's phone selection.
+     *
+     * @param manufacturer The new phone's manufacturer.
+     * @param model        The new phone's model.
+     */
+    public void createNewPhone(String manufacturer, String model) {
+        String procedure = "{call CREATE_NEW_PHONE(\'" + manufacturer + "\', \'" + model + "\')}";
+        try {
+            databaseApi.executeProcedure(procedure);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("There was an error creating the new phone!");
+        } finally {
+            databaseApi.logout();
         }
     }
 

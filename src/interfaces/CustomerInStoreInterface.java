@@ -10,7 +10,7 @@ import java.util.ArrayList;
  */
 public class CustomerInStoreInterface extends AbstractCustomerInterface {
 
-    private int storeNumber = ((int) (Math.random() * 99)) + 2;
+    private int storeNumber = ((int) (Math.random() * 9)) + 2;
 
     private String name;
     private String customerId;
@@ -26,6 +26,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
         if (name == null && customerId == null) {
             String[] information = getCustomerNameAndId();
             if (information == null) {
+                System.out.println("Well, we can\'t perform any transactions without your information.");
                 System.out.println("Returning to the interface screen...");
                 System.out.println();
                 return true;
@@ -65,19 +66,22 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
         String name, id;
         while (true) {
             name = FormValidation.getStringInput("Please enter your name:", "name", 250);
-            ArrayList<Integer> customerIdList = customerDatabase.getCustomerIdsForName(name);
-            if (customerIdList != null) {
+            Object[][] customerIds = customerDatabase.getCustomerIdsForName(name);
+            if (customerIds != null) {
                 System.out.println();
                 while (true) {
                     int response = FormValidation.getIntegerInput("Please enter your ID from the list, -1 to enter a " +
                             "different name, or -2 to open a new account:", 1000000);
+                    String newName = isValidCustomerId(customerIds, response);
                     if (response == -2) {
                         performOpenAccount(null);
-                    } else if (customerDatabase.isValidCustomerId(customerIdList, response)) {
+                    } else if (newName != null) {
                         id = response + "";
-                        return new String[]{name, id};
+                        return new String[]{newName, id};
                     } else if (response == -1) {
                         break;
+                    } else {
+                        System.out.println("Invalid ID entered.");
                     }
                 }
             } else {
@@ -91,6 +95,15 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 }
             }
         }
+    }
+
+    private String isValidCustomerId(Object[][] customerIds, int response) {
+        for (Object[] customerId : customerIds) {
+            if (((Integer) customerId[0]) == response) {
+                return (String) customerId[1];
+            }
+        }
+        return null;
     }
 
     @Override

@@ -66,8 +66,6 @@ final class DatabaseApi {
     ResultSet executeQuery(String query) throws SQLException {
         Statement statement = login();
         ResultSet resultSet = statement.executeQuery(query);
-        database.databaseConnection.commit();
-        logout();
         return resultSet;
     }
 
@@ -92,10 +90,7 @@ final class DatabaseApi {
     boolean executeProcedure(String procedure) throws SQLException {
         database.establishConnection();
         CallableStatement statement = database.databaseConnection.prepareCall(procedure);
-        boolean retVal = statement.execute();
-        database.databaseConnection.commit();
-        logout();
-        return retVal;
+        return statement.execute();
     }
 
     Statement login() {
@@ -109,8 +104,12 @@ final class DatabaseApi {
     }
 
     void logout() {
+        if (database.databaseConnection == null) {
+            return;
+        }
         try {
             database.databaseConnection.close();
+            database.databaseConnection = null;
         } catch (SQLException e) {
             e.printStackTrace();
         }

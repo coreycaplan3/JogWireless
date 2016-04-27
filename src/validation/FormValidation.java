@@ -81,7 +81,7 @@ public final class FormValidation {
         while (true) {
             System.out.println(prompt);
             String s = scanner.nextLine();
-            if (s.contains("\'") || s.contains("\"")) {
+            if (s.contains("\'") || s.contains("\"") || s.contains("\\")) {
                 System.out.println("Please enter a valid " + desiredResult);
             } else if (s.length() < 2) {
                 System.out.println("Sorry, your input was too short.");

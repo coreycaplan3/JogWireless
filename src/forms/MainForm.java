@@ -26,17 +26,20 @@ public class MainForm {
                 System.out.println("Login failed, try again!");
             }
         }
+        System.out.println();
         while (true) {
-            System.out.println("Select an interface to use:");
+            System.out.println("****************************** MAIN MENU ******************************");
             System.out.printf("%-75s %d\n", "A residential customer walking into a store", 1);
-            System.out.printf("%-75s %d\n", "A sales clerk/cashier working in a store", 2);
-            System.out.printf("%-75s %d\n", "An accountant or CFO looking at financial information", 3);
+            System.out.printf("%-75s %d\n", "A manager of one of Jog\'s stores", 2);
+            System.out.printf("%-75s %d\n", "A CEO managing Jog Wireless", 3);
             System.out.printf("%-75s %d\n", "A residential customer trying to get started with Jog online", 4);
             System.out.printf("%-75s %d\n", "A business hoping to get started with Jog", 5);
             System.out.printf("%-75s %d\n", "A business managing its account information", 6);
             System.out.printf("%-75s %d\n", "Send text messages, make phone calls, or use the internet as any " +
                     "customer", 7);
             System.out.printf("%-75s %d\n", "Quit this program", -1);
+            System.out.println("***********************************************************************");
+            System.out.println("Select an interface to use:");
             int response = FormValidation.getIntegerInput("", 10);
             if (response == -1) {
                 break;
@@ -44,7 +47,8 @@ public class MainForm {
                 BaseInterface baseInterface = getInterfaceForResponse(response);
                 while (true) {
                     if (baseInterface.performTransaction()) {
-                        System.out.println("Welcome back to the home screen!");
+                        System.out.println("Welcome back to the Main Menu!");
+                        System.out.println();
                         break;
                     }
                 }

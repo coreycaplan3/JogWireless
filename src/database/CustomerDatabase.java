@@ -58,6 +58,8 @@ public class CustomerDatabase {
             }
         } catch (SQLException e) {
             System.out.println("There was an error executing your transaction.");
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -75,6 +77,8 @@ public class CustomerDatabase {
                     "billing cycle.");
         } catch (SQLException e) {
             System.out.println("There was an error processing your request.");
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -118,6 +122,8 @@ public class CustomerDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -133,6 +139,8 @@ public class CustomerDatabase {
             return resultSet.getString(0);
         } catch (SQLException e) {
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -148,6 +156,8 @@ public class CustomerDatabase {
             return resultSet.getString(0);
         } catch (SQLException e) {
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -177,6 +187,8 @@ public class CustomerDatabase {
             } else {
                 System.out.println("There was an error adding the customer to your account!");
             }
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -201,12 +213,12 @@ public class CustomerDatabase {
                 case -20000:
                     System.out.println("Sorry, There are no more valid phone numbers! Jog needs to buy more phone " +
                             "numbers!");
-                case -20001:
-                    System.out.println("Sorry, Jog is out of stock of that phone model. Please pick a different phone!");
                 default:
                     System.out.println("Oops: An error occurred!");
                     e.printStackTrace();
             }
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -249,6 +261,8 @@ public class CustomerDatabase {
             }
         } catch (SQLException e) {
             System.out.println("Error executing update!");
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -305,6 +319,8 @@ public class CustomerDatabase {
             e.printStackTrace();
             System.out.println("Unknown error!");
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -382,6 +398,8 @@ public class CustomerDatabase {
                     e.printStackTrace();
                     break;
             }
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -429,6 +447,8 @@ public class CustomerDatabase {
         } catch (SQLException e) {
             System.out.println("Unknown error getting phone models!");
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -439,14 +459,14 @@ public class CustomerDatabase {
      * @return An array list of customer IDs or <b>null</b> if no customers were found or an error occurred during the
      * transaction.
      */
-    public ArrayList<Integer> getCustomerIdsForName(String name) {
+    public Object[][] getCustomerIdsForName(String name) {
         if (name.length() > 2) {
             name = name.substring(1, name.length() - 1);
         }
         String sql = "SELECT * FROM CUSTOMER WHERE NAME LIKE \'%" + name + "%\' ORDER BY NAME";
         try {
             ResultSet resultSet = databaseApi.executeQuery(sql);
-            if (!ResultSetHelper.isResultSetValid(resultSet, "No customers found with the name " + name)) {
+            if (!ResultSetHelper.isResultSetValid(resultSet, "No customers found for that name.")) {
                 return null;
             } else {
                 List<String> columnNames = new ArrayList<>();
@@ -458,19 +478,14 @@ public class CustomerDatabase {
                 columnTypes.add(TableConstants.Customer.NAME_TYPE);
 
                 ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
-                Object[][] results = resultSetHelper.printResults(25);
-                ArrayList<Integer> customerIds = new ArrayList<>();
-                for (Object[] result : results) {
-                    if (result != null) {
-                        customerIds.add((Integer) result[0]);
-                    }
-                }
-                return customerIds;
+                return resultSetHelper.printResults(25);
             }
         } catch (SQLException e) {
             System.out.println("Error retrieving results!");
             e.printStackTrace();
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -481,9 +496,9 @@ public class CustomerDatabase {
      * @param customerId     The ID that should be checked.
      * @return True if it's a valid ID or false if it's not.
      */
-    public boolean isValidCustomerId(ArrayList<Integer> customerIdList, int customerId) {
-        for (Integer id : customerIdList) {
-            if (id == customerId) {
+    public boolean isValidCustomerId(Object[][] customerIdList, int customerId) {
+        for (Object[] id : customerIdList) {
+            if ((Integer) id[0] == customerId) {
                 return true;
             }
         }
@@ -535,6 +550,8 @@ public class CustomerDatabase {
         } catch (SQLException e) {
             System.out.println("Error processing transaction...");
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -573,6 +590,8 @@ public class CustomerDatabase {
             e.printStackTrace();
             System.out.println("There was an error retrieving your unpaid bills!");
             return null;
+        } finally {
+            databaseApi.logout();
         }
     }
 
@@ -584,6 +603,8 @@ public class CustomerDatabase {
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("There was an error paying your bill!");
+        } finally {
+            databaseApi.logout();
         }
     }
 
