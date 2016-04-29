@@ -134,6 +134,10 @@ public class CustomerDatabase {
      */
     public String getAddressFromCustomerId(int customerId) {
         String query = "SELECT ADDRESS FROM CUSTOMER WHERE C_ID = " + customerId;
+        return getFirstResultFromQuery(query);
+    }
+
+    private String getFirstResultFromQuery(String query) {
         try {
             ResultSet resultSet = databaseApi.executeQuery(query);
             return resultSet.getString(0);
@@ -151,14 +155,7 @@ public class CustomerDatabase {
      */
     public String getNameFromCustomerId(int customerId) {
         String query = "SELECT NAME FROM CUSTOMER WHERE C_ID = " + customerId;
-        try {
-            ResultSet resultSet = databaseApi.executeQuery(query);
-            return resultSet.getString(0);
-        } catch (SQLException e) {
-            return null;
-        } finally {
-            databaseApi.logout();
-        }
+        return getFirstResultFromQuery(query);
     }
 
     /**

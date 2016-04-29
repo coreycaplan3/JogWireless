@@ -1,6 +1,9 @@
 package database;
 
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.TreeMap;
 
 /**
  * Created by coreycaplan on 4/20/16.
@@ -25,12 +28,16 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * @return True if the text message sent successfully or false if it did not.
      */
     public boolean sendTextMessage(long sourcePhone, long destPhone, String timeSent, String timeReceived) {
+        return sendTextMessage(sourcePhone, destPhone, timeSent, timeReceived, 1024);
+    }
+
+    public boolean sendTextMessage(long sourcePhone, long destPhone, String timeSent, String timeReceived, int bytes) {
         try {
             String procedure = "{call SEND_TEXT_MESSAGE(" +
                     sourcePhone + ", " +
                     destPhone + ", " +
                     "\'" + timeSent + "\', " +
-                    "\'" + timeReceived + "\')}";
+                    "\'" + timeReceived + "\', " + bytes + ")}";
             databaseApi.executeProcedure(procedure);
             return true;
         } catch (SQLException e) {
@@ -89,6 +96,28 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         } finally {
             databaseApi.logout();
         }
+    }
+
+    /**
+     * Gets all of the phone numbers that are in-service and on an account.
+     *
+     * @return A {@link TreeMap} that contains all of the phone numbers tied to an account.
+     */
+    public TreeMap<Long, Integer> getAllPhoneNumbersWithAccounts() {
+        ArrayList<String> columnNames = ResultSetHelper.makeColumnNames("PHONE_NUMBER", "A_ID");
+        String query = "SELECT\n" +
+                "  A_ID,\n" +
+                "  PHONE_NUMBER\n" +
+                "FROM SUBSCRIBES";
+        TreeMap<Long, Integer> treeMap = new TreeMap<>();
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            while (resultSet.next()) {
+                treeMap.put(resultSet.getLong(columnNames.get((0))), resultSet.getInt(columnNames.get(1)));
+            }
+        } catch (SQLException ignored) {
+        }
+        return treeMap;
     }
 
 }

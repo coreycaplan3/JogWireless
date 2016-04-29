@@ -37,13 +37,14 @@ public class MainForm {
             System.out.printf("%-75s %d\n", "A business managing its account information", 6);
             System.out.printf("%-75s %d\n", "Send text messages, make phone calls, or use the internet as any " +
                     "customer", 7);
+            System.out.printf("%-75s %d\n", "Stream input and quickly upload customer usage information", 8);
             System.out.printf("%-75s %d\n", "Quit this program", -1);
             System.out.println("***********************************************************************");
             System.out.println("Select an interface to use:");
             int response = FormValidation.getIntegerInput("", 10);
             if (response == -1) {
                 break;
-            } else if (response >= 1 && response <= 7) {
+            } else if (response >= 1 && response <= 8) {
                 BaseInterface baseInterface = getInterfaceForResponse(response);
                 while (true) {
                     if (baseInterface.performTransaction()) {
@@ -76,6 +77,8 @@ public class MainForm {
                 return new BusinessManagingInterface();
             case 7:
                 return new UsePhoneInterface();
+            case 8:
+                return new StreamInputInterface();
             default:
                 throw new IllegalArgumentException("Invalid choice entered!");
         }

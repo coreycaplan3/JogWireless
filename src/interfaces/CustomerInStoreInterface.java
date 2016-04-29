@@ -87,9 +87,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
             } else {
                 System.out.println("It appears you aren't in our system. Would you like to open an account?");
                 boolean isGoingToOpenAccount = FormValidation.getTrueOrFalse();
-                if (!isGoingToOpenAccount) {
-                    return null;
-                } else {
+                if (isGoingToOpenAccount) {
                     performOpenAccount(null);
                     return null;
                 }

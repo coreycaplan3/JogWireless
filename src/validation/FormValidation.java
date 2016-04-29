@@ -87,7 +87,10 @@ public final class FormValidation {
                 System.out.println("Sorry, your input was too short.");
             } else if (s.length() >= maxLength) {
                 System.out.println("Sorry, your input was too long.");
-            } else {
+            } else if (s.trim().equalsIgnoreCase("null")) {
+                System.out.println("You cannot enter null as a string!");
+            }
+            else {
                 return s;
             }
         }
@@ -95,7 +98,7 @@ public final class FormValidation {
 
     private static boolean isValidString(String s) {
         for (int i = 0; i < s.length(); i++) {
-            if (!Character.isLetterOrDigit(s.charAt(i)) && !Character.isSpaceChar(s.charAt(i))) {
+            if (!Character.isLetterOrDigit(s.charAt(i)) && !Character.isSpaceChar(s.charAt(i)) && s.charAt(i) != '-') {
                 return false;
             }
         }
