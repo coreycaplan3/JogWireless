@@ -1,7 +1,11 @@
 package interfaces;
 
+import com.sun.org.apache.xpath.internal.SourceTree;
+import database.CustomerDatabase;
 import database.CustomerUsageDatabase;
 import validation.FormValidation;
+
+import java.util.TreeMap;
 
 /**
  * A theoretical interface that allows customers to use their devices. This includes sending text messages,
@@ -10,8 +14,10 @@ import validation.FormValidation;
 public class UsePhoneInterface extends AbstractCustomerInterface {
 
     private CustomerUsageDatabase customerUsageDatabase;
+    private CustomerDatabase customerDatabase;
     private String customerId;
     private long customerPhoneNumber;
+    private TreeMap<Integer, Integer> customersWithAccounts;
 
     public UsePhoneInterface() {
         System.out.println("Welcome to the theoretical usage interface!");
@@ -19,39 +25,23 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
         System.out.println("and use data. Feel free to stress test Edgar1!");
 
         customerUsageDatabase = new CustomerUsageDatabase();
+        customerDatabase = new CustomerDatabase();
+        customersWithAccounts = customerDatabase.getCustomerAccounts();
     }
 
     @Override
     public boolean performTransaction() {
         while (true) {
             System.out.println();
-            System.out.println("Phone Usage Home Screen:");
-            if (customerId == null) {
-                customerId = getCustomerIdFromList();
-                if (customerId == null) {
-                    return true;
-                }
-                getPhoneFromCustomerId();
-            } else {
-                System.out.println("Would you like to change the customer that you are impersonating?");
-                boolean choice = FormValidation.getTrueOrFalse();
-                if (choice) {
-                    customerId = getCustomerIdFromList();
-                    if(customerId == null) {
-                        return true;
-                    }
-                } else {
-                    System.out.println("Would you like to change the phone number that you are using?");
-                    choice = FormValidation.getTrueOrFalse();
-                    if (choice) {
-                        getPhoneFromCustomerId();
-                    }
-                }
+            if (getCustomerInformation()) {
+                return true;
             }
-            System.out.println("Phone usage options:");
+            System.out.println("***************************** Usage Menu *****************************");
             System.out.printf("%-20s %d\n", "Send a text message", 1);
             System.out.printf("%-20s %d\n", "Make a phone call", 2);
             System.out.printf("%-20s %d\n", "Use the internet", 3);
+            System.out.printf("%-20s %d\n", "Go back to the main menu", -1);
+            System.out.println("**********************************************************************");
             int response;
             while (true) {
                 response = FormValidation.getIntegerInput("Please select an option:", 4);
@@ -64,6 +54,8 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
                 } else if (response == 3) {
                     useInternet();
                     break;
+                } else if (response == -1) {
+                    return true;
                 } else {
                     System.out.println("Please enter a valid option.");
                 }
@@ -72,6 +64,62 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
                 System.out.println("Returning to the interface selection screen...");
                 System.out.println();
                 return true;
+            }
+        }
+    }
+
+    private boolean getCustomerInformation() {
+        if (customerId == null) {
+            customerId = retrieveCustomerId();
+            if (customerId == null) {
+                return true;
+            }
+            getPhoneFromCustomerId();
+        } else {
+            System.out.println("Would you like to change the customer that you are impersonating?");
+            boolean choice = FormValidation.getTrueOrFalse();
+            if (choice) {
+                customerId = retrieveCustomerId();
+                if (customerId == null) {
+                    return true;
+                } else {
+                    getPhoneFromCustomerId();
+                }
+            } else {
+                System.out.println("Would you like to change the phone number that you are using?");
+                choice = FormValidation.getTrueOrFalse();
+                if (choice) {
+                    getPhoneFromCustomerId();
+                }
+            }
+        }
+        return false;
+    }
+
+    private String retrieveCustomerId() {
+        while (true) {
+            String name = FormValidation.getStringInput("Please enter the name of the person you would like to " +
+                    "impersonate or -q to return:", "name", 250);
+            if (name.equals("-q")) {
+                return null;
+            }
+            Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
+            if (customerIdList != null) {
+                while (true) {
+                    int customerId = FormValidation.getIntegerInput("Please enter the ID from the list or -1 to " +
+                            "search for a different name:", 10000000);
+                    if (customerId == -1) {
+                        break;
+                    } else if (customerDatabase.isValidCustomerId(customerIdList, customerId)) {
+                        if (customersWithAccounts.containsKey(customerId)) {
+                            return customerId + "";
+                        } else {
+                            System.out.println("Sorry that customer isn\'t linked to an account.");
+                        }
+                    } else {
+                        System.out.println("Please enter a valid ID.");
+                    }
+                }
             }
         }
     }
@@ -96,6 +144,7 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
         String timeSent = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the text was sent:");
         String timeReceived = FormValidation.getUsageEndDate(timeSent, 2);
         int textCount = FormValidation.getIntegerInput("Please enter the amount of texts you would like to send:", 250);
+        System.out.println("Preparing to send text messages...");
         for (int i = 0; i < textCount; i++) {
             customerUsageDatabase.sendTextMessage(customerPhoneNumber, destPhoneNumber, timeSent, timeReceived);
         }
@@ -108,6 +157,7 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
                 "call was made:");
         int callDuration = FormValidation.getIntegerInput("Please enter the duration of the call in seconds:", 10800);
         String endTime = FormValidation.getUsageEndDate(startTime, callDuration);
+        System.out.println("Preparing to make the phone call...");
         customerUsageDatabase.sendPhoneCall(customerPhoneNumber, destPhoneNumber, startTime, endTime);
     }
 
@@ -116,6 +166,7 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
                 "was used:");
         int megabyteAmount = FormValidation.getIntegerInput("Please enter the amount in megabytes that you would like " +
                 "to use:", 10240);
+        System.out.println("Preparing to use the internet...");
         customerUsageDatabase.useInternet(customerPhoneNumber, usageDate, megabyteAmount);
     }
 

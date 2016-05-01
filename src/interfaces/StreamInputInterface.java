@@ -8,6 +8,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 /**
@@ -27,7 +28,7 @@ public class StreamInputInterface extends BaseInterface {
     }
 
     public StreamInputInterface() {
-        System.out.println("Welcome to the Jog Wireless data stream!");
+        System.out.println("************** Welcome to the Jog Wireless data stream! **************");
         customerUsageDatabase = new CustomerUsageDatabase();
         accountHashMap = customerUsageDatabase.getAllPhoneNumbersWithAccounts();
     }
@@ -35,9 +36,15 @@ public class StreamInputInterface extends BaseInterface {
     @Override
     public boolean performTransaction() {
         System.out.println("To begin please enter a file name that contains customer usage information:");
-        System.out.println("Note, please be sure it is in the usage folder!");
+        System.out.println("Note, please be sure it is in the \"usage\" folder!");
+        Scanner scanner = new Scanner(System.in);
         while (true) {
-            String fileName = FormValidation.getStringInput("File Name:", "file", 150);
+            String fileName;
+            System.out.println("Enter a file name or -q to quit:");
+            fileName = scanner.nextLine();
+            if (fileName.equals("-q")) {
+                return true;
+            }
             fileName = "usage/" + fileName;
             BufferedReader bufferedReader = null;
             FileReader inputFile = null;
@@ -58,8 +65,10 @@ public class StreamInputInterface extends BaseInterface {
                     if (usageType == UsageType.TYPE_TEXT) {
                         information = getTextInformation(line);
                         long sourcePhone = Long.parseLong(information[0]);
-                        if (accountHashMap.get(sourcePhone) == null) {
+
+                        if (!accountHashMap.containsKey(sourcePhone)) {
                             printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                            continue;
                         }
 
                         long destPhone = Long.parseLong(information[1]);
@@ -69,12 +78,29 @@ public class StreamInputInterface extends BaseInterface {
                         customerUsageDatabase.sendTextMessage(sourcePhone, destPhone, startTime, endTime, bytes);
                     } else if (usageType == UsageType.TYPE_CALL) {
                         information = getCallInformation(line);
-                        customerUsageDatabase.sendPhoneCall(Long.parseLong(information[0]),
-                                Long.parseLong(information[1]), information[2], information[3]);
+                        long sourcePhone = Long.parseLong(information[0]);
+                        long destPhone = Long.parseLong(information[1]);
+                        String startTime = information[2];
+                        String endTime = information[3];
+
+                        if (accountHashMap.containsKey(sourcePhone)) {
+                            printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                            continue;
+                        }
+
+                        customerUsageDatabase.sendPhoneCall(sourcePhone, destPhone, startTime, endTime);
                     } else if (usageType == UsageType.TYPE_INTERNET) {
                         information = getInternetInformation(line);
-                        customerUsageDatabase.useInternet(Long.parseLong(information[0]), information[1],
-                                Integer.parseInt(information[2]));
+                        long sourcePhone = Long.parseLong(information[0]);
+                        String usageDate = information[1];
+                        int megabytes = Integer.parseInt(information[2]);
+
+                        if (accountHashMap.containsKey(sourcePhone)) {
+                            printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                            continue;
+                        }
+
+                        customerUsageDatabase.useInternet(sourcePhone, usageDate, megabytes);
                     } else {
                         printError(usageType, lineCount, line, errorWriter);
                     }
@@ -109,8 +135,12 @@ public class StreamInputInterface extends BaseInterface {
         String errorType;
         if (UsageType.TYPE_INVALID_FORMAT == typeOfError) {
             errorType = "<INVALID FORMATTING>";
-        } else {
+        } else if (UsageType.TYPE_UNKNOWN == typeOfError) {
             errorType = "<UNKNOWN USAGE TYPE>";
+        } else if (UsageType.TYPE_NO_ACCOUNT == typeOfError) {
+            errorType = "<SOURCE PHONE NOT TIED TO AN ACCOUNT>";
+        } else {
+            errorType = "<UNKNOWN ERROR>";
         }
         String error = new Date().toString() + " - Error at line <" + lineCount + "> " + errorType +
                 " : " + line;

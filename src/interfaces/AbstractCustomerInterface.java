@@ -3,7 +3,7 @@ package interfaces;
 import database.CustomerDatabase;
 import validation.FormValidation;
 
-import java.util.ArrayList;
+import java.util.TreeMap;
 
 /**
  * An <i>abstract</i> class used for passing on certain methods to the classes that extend it.
@@ -11,9 +11,32 @@ import java.util.ArrayList;
 abstract class AbstractCustomerInterface extends BaseInterface {
 
     private CustomerDatabase customerDatabase;
+    private String customerName;
+    private String customerId;
+    private TreeMap<Integer, Integer> customersWithAccounts;
 
     AbstractCustomerInterface() {
         customerDatabase = new CustomerDatabase();
+        customerId = "-1";
+        if (!isResidential()) {
+            customersWithAccounts = customerDatabase.getCustomersOnBusinessAccounts();
+        }
+    }
+
+    String getCustomerId() {
+        return customerId;
+    }
+
+    String getCustomerName() {
+        return customerName;
+    }
+
+    void setCustomerId(String customerId) {
+        this.customerId = customerId;
+    }
+
+    void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     /**
@@ -26,11 +49,14 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         while (true) {
             String prompt;
             if (isResidential()) {
-                prompt = "Please enter your name:";
+                prompt = "Please enter your name or -q to return:";
             } else {
-                prompt = "Please enter the name of the owner of the business:";
+                prompt = "Please enter the name of a person on the business\'s account or -q to return:";
             }
             String name = FormValidation.getStringInput(prompt, "name", 250);
+            if (name.equals("-q")) {
+                return null;
+            }
             Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
             if (customerIdList != null) {
                 System.out.println();
@@ -44,7 +70,15 @@ abstract class AbstractCustomerInterface extends BaseInterface {
                 if (response == -2) {
                     return null;
                 } else if (customerDatabase.isValidCustomerId(customerIdList, response)) {
-                    return response + "";
+                    if (!isResidential() && customersWithAccounts.containsKey(response)) {
+                        return response + "";
+                    } else if (!isResidential()) {
+                        System.out.println("It appears you aren\'t tied to an account.");
+                        System.out.println("You\'re going to have to select a different customer.");
+                        System.out.println();
+                    } else if (isResidential()) {
+                        return response + "";
+                    }
                 } else if (response != -1) {
                     System.out.println("Please enter a valid number from the list.");
                 }
@@ -60,20 +94,19 @@ abstract class AbstractCustomerInterface extends BaseInterface {
      *
      * @param customerId The ID of the customer wishing to open an account.
      */
-    void performOpenAccount(String customerId) {
+    void performOpenAccount(String customerId, int storeNumber) {
         String address;
-        String name;
         String prompt;
         if (customerId == null) {
+            return;
+        }
+        if (Integer.parseInt(customerId) == -1) {
             if (isResidential()) {
-                prompt = "Please enter your name, or enter -q to return";
+                prompt = "Please enter your name:";
             } else {
-                prompt = "Please enter the name of the owner of the account or -q to return";
+                prompt = "Please enter the name of the owner of the business\'s account:";
             }
-            name = FormValidation.getStringInput(prompt, "name", 100000);
-            if (name.equals("-q")) {
-                return;
-            }
+            customerName = FormValidation.getStringInput(prompt, "name", 100000);
             if (isResidential()) {
                 prompt = "Please enter your address:";
             } else {
@@ -81,26 +114,32 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             }
             address = FormValidation.getStringInput(prompt, "address", 250);
         } else {
-            name = customerDatabase.getNameFromCustomerId(Integer.parseInt(customerId));
+            this.customerId = customerId;
+            customerName = customerDatabase.getNameFromCustomerId(Integer.parseInt(customerId));
             address = customerDatabase.getAddressFromCustomerId(Integer.parseInt(customerId));
         }
-        int desiredPhone = getNewPhone();
-        String desiredPlan = getNewPhonePlanForAccount();
-        customerDatabase.createAccount(name, address, desiredPhone, 1, desiredPlan);
+        int desiredPhone = getNewPhone(storeNumber);
+        int desiredPlan = getPhonePlanForAccount("Here are the plans offered with your account:");
+        System.out.println("Are you sure you would like to create the account?");
+        boolean choice = FormValidation.getTrueOrFalse();
+        if (!choice) {
+            return;
+        }
+        this.customerId = "-2";
+        customerDatabase.createAccount(customerName, address, desiredPhone, storeNumber, desiredPlan,
+                Integer.parseInt(customerId));
         System.out.println();
     }
 
     void performUpgradePhone(String customerId, int storeNumber) {
         System.out.println("Here are the different models from which you may choose:");
-        Object[][] phonesForSale = customerDatabase.getPhoneModelsForSale();
+        Object[][] phonesForSale = customerDatabase.getPhoneModelsForSale(storeNumber);
         while (true) {
             int response = FormValidation.getIntegerInput("Please enter the Phone ID of the phone you would like " +
-                    "to buy, or enter -1 to return:", phonesForSale.length + 1);
-            if (response == -1) {
-                return;
-            } else if (customerDatabase.isPhoneStocked(response, phonesForSale)) {
+                    "to buy:", phonesForSale.length + 1);
+            if (customerDatabase.isPhoneStocked(response, phonesForSale)) {
                 int phoneToBuy = (int) phonesForSale[response - 1][0];
-                Object[][] userPhones = customerDatabase.getCustomerPhones(customerId);
+                Object[][] userPhones = customerDatabase.getCustomerPhones(customerId, isResidential());
                 while (true) {
                     response = FormValidation.getIntegerInput("Please select which of your phones you would like to " +
                             "upgrade:", 100000);
@@ -132,7 +171,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             } else if (response < 1 || response > 3) {
                 System.out.println("Please enter a valid choice.");
             } else {
-                Object[][] phones = customerDatabase.getCustomerPhones(customerId);
+                Object[][] phones = customerDatabase.getCustomerPhones(customerId, isResidential());
                 if (phones == null) {
                     System.out.println("You have no phones to report!");
                     System.out.println();
@@ -183,19 +222,19 @@ abstract class AbstractCustomerInterface extends BaseInterface {
      * Gets the customer's account ID from a given customer ID.
      *
      * @param customerId The ID of the customer whose account should be tied to it.
-     * @return The ID of the customer\'s account or -1 if the customer isn't tied to any accounts.
+     * @return The ID of the customer's account where he/she is the owner or <b>null</b> if the customer isn't tied to
+     * any accounts.
      */
     String getAccountIdFromCustomerId(String customerId) {
-        Object[][] customerAccounts = customerDatabase.getAccountsWhereCustomerIsOwner(customerId);
+        Object[][] customerAccounts = customerDatabase.getAccountsWhereCustomerIsOwner(customerId, isResidential());
         if (customerAccounts == null) {
-            System.out.println();
-            return "-1";
+            return null;
         }
         while (true) {
-            int choice = FormValidation.getIntegerInput("Please enter the ID of the account you would like to manage",
+            int choice = FormValidation.getIntegerInput("Please enter the ID of the account you would like to manage:",
                     100000);
             for (Object[] customerAccount : customerAccounts) {
-                if (((Integer) customerAccount[0]) == choice) {
+                if (Integer.parseInt((String) customerAccount[0]) == choice) {
                     return "" + customerAccount[0];
                 }
             }
@@ -220,26 +259,30 @@ abstract class AbstractCustomerInterface extends BaseInterface {
                         "to find:", "name", 250);
                 Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
                 if (customerIdList != null) {
-                    int customerId = FormValidation.getIntegerInput("Please enter the customer\'s ID from the list " +
-                            "or enter -1 to research:", 1000000);
-                    if (customerDatabase.isValidCustomerId(customerIdList, customerId)) {
-                        name = customerDatabase.getNameFromCustomerId(customerId);
-                        String address = customerDatabase.getAddressFromCustomerId(customerId);
-                        int desiredPhone = getNewPhone();
-                        customerDatabase.addCustomerToAccount("" + customerId, name, address, desiredPhone,
-                                accountId, storeNumber);
-                        System.out.println("Returning to the home screen...");
-                        System.out.println();
-                        return;
-                    } else if (customerId != -1) {
-                        System.out.println("Please enter a valid customer ID from the list.");
+                    while (true) {
+                        int customerId = FormValidation.getIntegerInput("Please enter the customer\'s ID from the list " +
+                                "or enter -1 to research:", 1000000);
+                        if (customerDatabase.isValidCustomerId(customerIdList, customerId)) {
+                            name = customerDatabase.getNameFromCustomerId(customerId);
+                            String address = customerDatabase.getAddressFromCustomerId(customerId);
+                            int desiredPhone = getNewPhone(storeNumber);
+                            customerDatabase.addCustomerToAccount("" + customerId, name, address, desiredPhone,
+                                    accountId, storeNumber);
+                            System.out.println("Returning to the home screen...");
+                            System.out.println();
+                            return;
+                        } else if (customerId == -1) {
+                            break;
+                        } else {
+                            System.out.println("Please enter a valid customer ID from the list.");
+                        }
                     }
                 }
             }
         } else {
             String address = FormValidation.getStringInput("Please enter the person\'s address:", "address",
                     250);
-            int desiredPhone = getNewPhone();
+            int desiredPhone = getNewPhone(storeNumber);
             customerDatabase.addCustomerToAccount("-1", name, address, desiredPhone, accountId, storeNumber);
             System.out.println("Returning to the home screen...");
             System.out.println();
@@ -248,10 +291,11 @@ abstract class AbstractCustomerInterface extends BaseInterface {
     }
 
     /**
+     * @param storeNumber The store from which the phone is being bought.
      * @return An integer representing the model of phone that the user would like.
      */
-    int getNewPhone() {
-        Object[][] phonesForSale = customerDatabase.getPhoneModelsForSale();
+    private int getNewPhone(int storeNumber) {
+        Object[][] phonesForSale = customerDatabase.getPhoneModelsForSale(storeNumber);
         while (true) {
             int desiredPhone = FormValidation.getIntegerInput("Please enter the Phone ID of the phone you would " +
                     "like to buy:", 100000);
@@ -269,7 +313,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
      * @param accountId The ID of the account that would like to change his/her plan.
      */
     void changeAccountPlan(String accountId) {
-        String desiredPlan = getNewPhonePlanForAccount();
+        int desiredPlan = getPhonePlanForAccount("Here are the plans to which you may switch:");
         if (isResidential()) {
             customerDatabase.changePlan(desiredPlan, accountId);
         } else {
@@ -288,13 +332,14 @@ abstract class AbstractCustomerInterface extends BaseInterface {
     /**
      * Prompts the user for the different phone plans and forces selection.
      *
-     * @return One of the phone plans available to the user (P_TYPE, primary key). Whether its residential or
+     * @return One of the phone plans available to the user (P_NAME, primary key). Whether its residential or
      * corporate depends on the interface with which the user is interacting.
      */
-    String getNewPhonePlanForAccount() {
-        System.out.println("Here are the plans to which you may switch:");
-        String[][] phonePlans;
-        phonePlans = customerDatabase.getAvailablePlans(isResidential());
+    private int getPhonePlanForAccount(String prompt) {
+        System.out.println(prompt);
+        System.out.println();
+        String[][] phonePlans = customerDatabase.getAvailablePlans(isResidential());
+        //Gets the length of the number of rows. For example, if the number of plans is 10, length is 2.
         int length = (phonePlans.length + "").length();
         length = Math.min(length, 6);
         System.out.printf("%-130s %-" + length + "s", "Plan", "Option\n");
@@ -303,7 +348,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             System.out.printf("%" + 134 + "s\n", (i + 1));
             System.out.println();
         }
-        return isValidPhonePlan(phonePlans);
+        return getValidPhonePlan(phonePlans);
     }
 
     /**
@@ -319,11 +364,11 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         System.out.println();
     }
 
-    private String isValidPhonePlan(String[][] phonePlans) {
+    private int getValidPhonePlan(String[][] phonePlans) {
         while (true) {
             int choice = FormValidation.getIntegerInput("Please select a plan for your account:", 100000);
             if (choice >= 1 && choice <= phonePlans.length) {
-                return phonePlans[choice - 1][0];
+                return Integer.parseInt(phonePlans[choice - 1][0]);
             } else {
                 System.out.println("Please select a valid plan.");
             }
@@ -332,11 +377,13 @@ abstract class AbstractCustomerInterface extends BaseInterface {
 
     void payBill(String accountId) {
         Object[][] unpaidBills = customerDatabase.getUnpaidBills(accountId);
-        if(unpaidBills == null) {
+        if (unpaidBills == null) {
             System.out.println("Returning to the selection screen...");
             System.out.println();
             return;
         }
+        System.out.println();
+        System.out.println("Here are your unpaid bills:");
         while (true) {
             int billToPay = FormValidation.getIntegerInput("Please enter the bill ID of the bill you would like to " +
                     "pay.", 1000000);

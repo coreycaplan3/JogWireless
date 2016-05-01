@@ -1,10 +1,13 @@
 package database;
 
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static database.ColumnTypes.*;
 
 /**
  * A utility class for printing out the results of a result set nicely.
@@ -40,18 +43,25 @@ final class ResultSetHelper {
             Object[] object = new Object[columnNames.size()];
             for (int i = 0; i < columnTypes.size(); i++) {
                 object[i] = new Object();
-                if (columnTypes.get(i) == ColumnTypes.INTEGER) {
+                if (columnTypes.get(i) == INTEGER) {
                     object[i] = resultSet.getInt(columnNames.get(i));
                     System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                } else if (columnTypes.get(i) == ColumnTypes.STRING) {
+                } else if (columnTypes.get(i) == STRING) {
                     object[i] = resultSet.getString(columnNames.get(i));
                     System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                } else if (columnTypes.get(i) == ColumnTypes.LONG) {
+                } else if (columnTypes.get(i) == LONG) {
                     object[i] = resultSet.getLong(columnNames.get(i));
                     System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                } else if (columnTypes.get(i) == ColumnTypes.DOUBLE) {
+                } else if (columnTypes.get(i) == DOUBLE) {
                     object[i] = resultSet.getDouble(columnNames.get(i));
-                    System.out.printf("%.2-" + minimumSpacing + "f", object[i]);
+                    System.out.printf("%-" + minimumSpacing + ".2f", object[i]);
+                } else if (columnTypes.get(i) == DATE) {
+                    Date date = resultSet.getDate(columnNames.get(i));
+                    String dateString = String.format("%tb, %tY", date, date);
+                    System.out.printf("%-" + minimumSpacing + "s", dateString);
+                } else if (columnTypes.get(i) == DOUBLE_MONEY) {
+                    object[i] = resultSet.getDouble(columnNames.get(i));
+                    System.out.printf("$%-" + minimumSpacing + ".2f", object[i]);
                 }
 
             }
@@ -93,19 +103,25 @@ final class ResultSetHelper {
             Object[] object = new Object[columnTypes.size() + 1];
             for (int i = 0; i < columnTypes.size() + 1; i++) {
                 if (i < columnTypes.size()) {
-                    if (columnTypes.get(i) == ColumnTypes.INTEGER) {
+                    if (columnTypes.get(i) == INTEGER) {
                         object[i] = resultSet.getInt(columnNames.get(i));
                         System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                    } else if (columnTypes.get(i) == ColumnTypes.STRING) {
+                    } else if (columnTypes.get(i) == STRING) {
                         object[i] = resultSet.getString(columnNames.get(i));
                         System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                    } else if (columnTypes.get(i) == ColumnTypes.LONG) {
+                    } else if (columnTypes.get(i) == LONG) {
                         object[i] = resultSet.getLong(columnNames.get(i));
                         System.out.printf("%-" + minimumSpacing + "s", object[i]);
-                    } else if (columnTypes.get(i) == ColumnTypes.DOUBLE) {
+                    } else if (columnTypes.get(i) == DOUBLE) {
                         object[i] = resultSet.getDouble(columnNames.get(i));
                         System.out.printf("%.2-" + minimumSpacing + "f", object[i]);
+                    } else if (columnTypes.get(i) == DATE) {
+                        System.out.printf("%-" + minimumSpacing + "tb, %tY", object[i], object[i]);
+                    } else if (columnTypes.get(i) == DOUBLE_MONEY) {
+                        object[i] = resultSet.getDouble(columnNames.get(i));
+                        System.out.printf("$%-" + minimumSpacing + ".2f", object[i]);
                     }
+
                 } else {
                     object[i] = (rowCount + 1);
                     System.out.printf("%-" + minimumSpacing + "d", object[i]);

@@ -19,7 +19,7 @@ interface TableConstants {
         ColumnTypes A_ID_TYPE = INTEGER;
         ColumnTypes A_STATUS_TYPE = STRING;
         ColumnTypes PRIMARY_NUMBER_TYPE = LONG;
-        ColumnTypes CURRENT_PLAN_TYPE = STRING;
+        ColumnTypes CURRENT_PLAN_TYPE = INTEGER;
 
     }
 
@@ -28,15 +28,15 @@ interface TableConstants {
         String BILL_ID = "BILL_ID";
         String BILL_PERIOD = "BILL_PERIOD";
         String IS_PAID = "IS_PAID";
-        String PLAN = "PLAN";
+        String PLAN_ID = "PLAN_ID";
         String ACCUMULATED_CHARGES = "ACCUMULATED_CHARGES";
 
         ColumnTypes A_ID_TYPE = INTEGER;
         ColumnTypes BILL_ID_TYPE = INTEGER;
         ColumnTypes BILL_PERIOD_TYPE = DATE;
         ColumnTypes IS_PAID_TYPE = INTEGER;
-        ColumnTypes PLAN_TYPE = STRING;
-        ColumnTypes ACCUMULATED_CHARGES_TYPE = DOUBLE;
+        ColumnTypes PLAN_ID_TYPE = INTEGER;
+        ColumnTypes ACCUMULATED_CHARGES_TYPE = DOUBLE_MONEY;
     }
 
     interface Customer {
@@ -60,7 +60,7 @@ interface TableConstants {
         ColumnTypes MODEL_TYPE = STRING;
     }
 
-    interface PhoneNumber {
+    interface Service {
         String PHONE_NUMBER = "PHONE_NUMBER";
         String IS_IN_SERVICE = "IS_IN_SERVICE";
 
@@ -80,31 +80,33 @@ interface TableConstants {
 
     interface Plans {
 
-        String P_TYPE = "P_TYPE";
+        String PLAN_ID = "PLAN_ID";
+        String P_NAME = "P_NAME";
         String HARD_LIMIT = "HARD_LIMIT";
         String LIMIT_TEXTS = "LIMIT_TEXTS";
         String LIMIT_CALLS_SECONDS = "LIMIT_CALLS_SECONDS";
-        String LIMIT_INTERNET_MEGABYTES = "LIMIT_INTERNET_MEGABYTES";
+        String LIMIT_INTERNET_MB = "LIMIT_INTERNET_MB";
         String RATE_TEXTS = "RATE_TEXTS";
         String RATE_CALLS_SECONDS = "RATE_CALLS_SECONDS";
-        String RATE_INTERNET_MEGABYTES = "RATE_INTERNET_MEGABYTES";
+        String RATE_INTERNET_MB = "RATE_INTERNET_MB";
         String OVERDRAFT_RATE_TEXTS = "OVERDRAFT_RATE_TEXTS";
         String OVERDRAFT_RATE_CALLS_SECONDS = "OVERDRAFT_RATE_CALLS_SECONDS";
-        String OVERDRAFT_RATE_INTERNET_MEGABYTES = "OVERDRAFT_RATE_INTERNET_MEGABYTES";
+        String OVERDRAFT_RATE_INTERNET_MB = "OVERDRAFT_RATE_INTERNET_MB";
         String BASE_RATE = "BASE_RATE";
         String IS_RESIDENTIAL = "IS_RESIDENTIAL";
 
-        ColumnTypes P_TYPE_TYPE = STRING;
+        ColumnTypes PLAN_ID_TYPE = INTEGER;
+        ColumnTypes P_NAME_TYPE = STRING;
         ColumnTypes HARD_LIMIT_TYPE = INTEGER;
         ColumnTypes LIMIT_TEXTS_TYPE = INTEGER;
         ColumnTypes LIMIT_CALLS_SECONDS_TYPE = INTEGER;
-        ColumnTypes LIMIT_INTERNET_MEGABYTES_TYPE = INTEGER;
+        ColumnTypes LIMIT_INTERNET_MB_TYPE = INTEGER;
         ColumnTypes RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
-        ColumnTypes RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes RATE_INTERNET_MB_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes OVERDRAFT_RATE_TEXTS_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes OVERDRAFT_RATE_CALLS_SECONDS_TYPE = ColumnTypes.DOUBLE;
-        ColumnTypes OVERDRAFT_RATE_INTERNET_MEGABYTES_TYPE = ColumnTypes.DOUBLE;
+        ColumnTypes OVERDRAFT_RATE_INTERNET_MB_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes BASE_RATE_TYPE = ColumnTypes.DOUBLE;
         ColumnTypes IS_RESIDENTIAL_TYPE = INTEGER;
 

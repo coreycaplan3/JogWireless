@@ -36,12 +36,20 @@ public class CustomerUsageDatabase extends CustomerDatabase {
             String procedure = "{call SEND_TEXT_MESSAGE(" +
                     sourcePhone + ", " +
                     destPhone + ", " +
-                    "\'" + timeSent + "\', " +
-                    "\'" + timeReceived + "\', " + bytes + ")}";
+                    "to_date(\'" + timeSent + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
+                    "to_date(\'" + timeReceived + "\', \'yyyy-MM-dd HH24:mi:ss\'), "
+                    + bytes + ")}";
             databaseApi.executeProcedure(procedure);
+            System.out.println("Text sent successfully!");
             return true;
         } catch (SQLException e) {
-            System.out.println("Error sending text message...");
+            if (e.getErrorCode() == 20000) {
+                System.out.println("You cannot send anymore text messages for the month. You reached your monthly " +
+                        "limit!");
+            } else {
+                e.printStackTrace();
+                System.out.println("Error sending text message...");
+            }
             return false;
         } finally {
             databaseApi.logout();
@@ -62,12 +70,19 @@ public class CustomerUsageDatabase extends CustomerDatabase {
             String procedure = "{call SEND_PHONE_CALL(" +
                     sourcePhone + ", " +
                     destPhone + ", " +
-                    "\'" + startTime + "\', " +
-                    "\'" + endTime + "\')}";
+                    "to_date(\'" + startTime + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
+                    "to_date(\'" + endTime + "\', \'yyyy-MM-dd HH24:mi:ss\')" +
+                    ")}";
             databaseApi.executeProcedure(procedure);
+            System.out.println("Phone call was successful!");
             return true;
         } catch (SQLException e) {
-            System.out.println("Error sending phone call...");
+            if (e.getErrorCode() == 20000) {
+                System.out.println("You cannot make anymore phone calls for the month. You reached your monthly " +
+                        "limit!");
+            } else {
+                System.out.println("Error sending phone call...");
+            }
             return false;
         } finally {
             databaseApi.logout();
@@ -86,12 +101,18 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         try {
             String procedure = "{call USE_INTERNET(" +
                     sourcePhone + ", " +
-                    "\'" + usageDate + "\', " +
+                    "to_date(\'" + usageDate + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
                     megabyteAmount + ")}";
             databaseApi.executeProcedure(procedure);
+            System.out.println("Internet usage successful!");
             return true;
         } catch (SQLException e) {
-            System.out.println("Error sending text message...");
+            if (e.getErrorCode() == 20000) {
+                System.out.println("You cannot use anymore data for the month. You reached your monthly limit!");
+            } else {
+                e.printStackTrace();
+                System.out.println("Error using internet...");
+            }
             return false;
         } finally {
             databaseApi.logout();

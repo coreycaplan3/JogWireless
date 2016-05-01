@@ -1,9 +1,0 @@
-- Example Usage for Texts. This is also comment notation.
-- This is the format:
-- <USAGE_TYPE> <SOURCE_PHONE> <DEST_PHONE> <YYYY-MM-DD;HH24:MI:SS> <BYTES>
--
-- Note all parameters are separated by whitespace, the date/time is separated by semi-colon and you must append a
-- capital 'B' onto the byte amount.
--
-- This is a valid text message
-TEXT 732-123-1234 908-123-1234 2016-05-06;13:20:19 10B

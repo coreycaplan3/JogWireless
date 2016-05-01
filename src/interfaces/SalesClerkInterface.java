@@ -13,8 +13,8 @@ public class SalesClerkInterface extends BaseInterface {
     private int storeNumber = -1;
 
     public SalesClerkInterface() {
-        System.out.println("**********************************************************************");
         System.out.println("Greetings Jog manager!");
+        System.out.println();
         salesClerkDatabase = new SalesClerkDatabase();
     }
 
@@ -24,10 +24,11 @@ public class SalesClerkInterface extends BaseInterface {
             getStoreNumber();
         }
 
-        System.out.println("Please enter an option:");
+        System.out.println("************************** Sales Clerk Menu **************************");
         System.out.printf("%-50s %d\n", "See your store\'s inventory", 1);
         System.out.printf("%-50s %d\n", "Replenish your store\'s inventory", 2);
         System.out.printf("%-50s %d\n", "Go back to the main menu", -1);
+        System.out.println("**********************************************************************");
         while (true) {
             int choice = FormValidation.getIntegerInput("Please enter an option:", 5);
             if (choice == 1) {
@@ -39,7 +40,7 @@ public class SalesClerkInterface extends BaseInterface {
             } else if (choice == -1) {
                 return true;
             } else {
-
+                System.out.println("Please enter a valid option.");
             }
         }
         return false;
@@ -47,7 +48,7 @@ public class SalesClerkInterface extends BaseInterface {
 
     private void getStoreNumber() {
         while (true) {
-            int choice = FormValidation.getIntegerInput("To start, please enter a store number between 2 and 10", 12);
+            int choice = FormValidation.getIntegerInput("Please enter a store number between 2 and 10:", 12);
             if (choice < 2 || choice > 10) {
                 System.out.println("Please enter a valid store number.");
             } else {
@@ -72,7 +73,7 @@ public class SalesClerkInterface extends BaseInterface {
         while (true) {
             quantity = FormValidation.getIntegerInput("How many phones would you like to purchase for your store?",
                     100);
-            if(quantity < 1) {
+            if (quantity < 1) {
                 System.out.println("Please enter a valid quantity.");
             } else {
                 break;

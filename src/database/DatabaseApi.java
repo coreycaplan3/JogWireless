@@ -70,17 +70,6 @@ final class DatabaseApi {
     }
 
     /**
-     * Executes an insert or update on the Jog Wireless database.
-     *
-     * @param query The query to be executed.
-     * @return A long containing the update count for the query.
-     */
-    long executeInsertOrUpdate(String query) throws SQLException {
-        database.establishConnection();
-        return database.databaseConnection.createStatement().executeLargeUpdate(query);
-    }
-
-    /**
      * Attempts to execute a stored procedure in the database.
      *
      * @param procedure The procedure that should be executed, including its parameters.

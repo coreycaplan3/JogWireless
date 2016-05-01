@@ -50,19 +50,21 @@ public class SalesClerkDatabase {
         String query = "SELECT\n" +
                 "  MODEL,\n" +
                 "  MANUFACTURER,\n" +
-                "  count(*) AMOUNT_IN_STOCK\n" +
+                "  QUANTITY\n" +
                 "FROM STOCKS\n" +
-                "  NATURAL JOIN PHONE_PRODUCT\n" +
-                "  NATURAL JOIN PHONE_MODEL\n" +
+                "NATURAL JOIN PHONE_MODEL\n" +
                 "WHERE STORE_NUMBER = " + storeNumber + "\n" +
-                "      AND PHONE_ID = " + phoneId + "\n" +
-                "GROUP BY MODEL, MANUFACTURER;";
+                "      AND PHONE_ID = " + phoneId;
         try {
 
             ResultSet resultSet = databaseApi.executeQuery(query);
+            if (!ResultSetHelper.isResultSetValid(resultSet, "No inventory was found!")) {
+                return;
+            }
+            resultSet.next();
             String column1 = "MODEL";
             String column2 = "MANUFACTURER";
-            String column3 = "AMOUNT_IN_STOCK";
+            String column3 = "QUANTITY";
             System.out.printf("%-50s %-50s %-50s\n", column1, column2, column3);
             System.out.printf("%-50s %-50s %-50d\n", resultSet.getString(column1), resultSet.getString(column2),
                     resultSet.getInt(column3));
@@ -88,6 +90,7 @@ public class SalesClerkDatabase {
         try {
             databaseApi.executeProcedure(procedure);
             System.out.println("Successfully refilled store number " + storeNumber + "\'s inventory!");
+            System.out.println();
         } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("There was an issue refilling store number " + storeNumber + "\'s inventory!");

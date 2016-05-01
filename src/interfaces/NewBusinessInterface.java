@@ -13,6 +13,7 @@ public class NewBusinessInterface extends AbstractCustomerInterface {
         System.out.println("Welcome to Jog for business! We cannot wait to get you signed up with our reliable service!");
     }
 
+    @SuppressWarnings("Duplicates")
     @Override
     public boolean performTransaction() {
         System.out.println("Would you like to open a new account with us?");
@@ -22,14 +23,17 @@ public class NewBusinessInterface extends AbstractCustomerInterface {
             System.out.println();
             return true;
         } else {
-            if (customerId == null) {
-                System.out.println("Would you like to open a new account as an existing customer?");
-                choice = FormValidation.getTrueOrFalse();
-                if (choice) {
-                    customerId = getCustomerIdFromList();
-                }
+            System.out.println("Would you like to open a new account as an existing customer?");
+            choice = FormValidation.getTrueOrFalse();
+            if (choice) {
+                customerId = getCustomerIdFromList();
             }
-            performOpenAccount(customerId);
+            if (customerId == null) {
+                System.out.println("Since you didn\'t specify an existing customer, you\'ll create the " +
+                        "business\'s account as a new customer.");
+                customerId = "-1";
+            }
+            performOpenAccount(customerId, 1);
             System.out.println("Returning to the interface screen...");
             System.out.println();
             return true;

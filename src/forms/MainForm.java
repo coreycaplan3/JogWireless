@@ -40,8 +40,7 @@ public class MainForm {
             System.out.printf("%-75s %d\n", "Stream input and quickly upload customer usage information", 8);
             System.out.printf("%-75s %d\n", "Quit this program", -1);
             System.out.println("***********************************************************************");
-            System.out.println("Select an interface to use:");
-            int response = FormValidation.getIntegerInput("", 10);
+            int response = FormValidation.getIntegerInput("Select an interface to use:", 10);
             if (response == -1) {
                 break;
             } else if (response >= 1 && response <= 8) {
@@ -80,7 +79,7 @@ public class MainForm {
             case 8:
                 return new StreamInputInterface();
             default:
-                throw new IllegalArgumentException("Invalid choice entered!");
+                throw new IllegalArgumentException("Invalid choice entered. Found: " + choice);
         }
     }
 }
