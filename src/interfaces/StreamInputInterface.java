@@ -21,16 +21,17 @@ public class StreamInputInterface extends BaseInterface {
 
     private CustomerUsageDatabase customerUsageDatabase;
 
-    private TreeMap<Long, Integer> accountHashMap;
+    private TreeMap<Long, Integer> accountsTreeMap;
 
     private enum UsageType {
-        TYPE_TEXT, TYPE_CALL, TYPE_INTERNET, TYPE_COMMENT, TYPE_UNKNOWN, TYPE_INVALID_FORMAT, TYPE_NO_ACCOUNT
+        TYPE_TEXT, TYPE_CALL, TYPE_INTERNET, TYPE_COMMENT, TYPE_UNKNOWN_USAGE, TYPE_INVALID_FORMAT, TYPE_INVALID_DATE,
+        TYPE_INVALID_PHONE, TYPE_NO_ACCOUNT
     }
 
     public StreamInputInterface() {
         System.out.println("************** Welcome to the Jog Wireless data stream! **************");
         customerUsageDatabase = new CustomerUsageDatabase();
-        accountHashMap = customerUsageDatabase.getAllPhoneNumbersWithAccounts();
+        accountsTreeMap = customerUsageDatabase.getAllPhoneNumbersWithAccounts();
     }
 
     @Override
@@ -54,62 +55,15 @@ public class StreamInputInterface extends BaseInterface {
             try {
                 inputFile = new FileReader(fileName);
                 bufferedReader = new BufferedReader(inputFile);
-                errorWriter = new FileWriter("error.log");
-                databaseWriter = new FileWriter("usage_information.log");
-                String line;
-                int lineCount = 0;
-                while ((line = bufferedReader.readLine()) != null) {
-                    lineCount++;
-                    UsageType usageType = getUsageType(line);
-                    String[] information;
-                    if (usageType == UsageType.TYPE_TEXT) {
-                        information = getTextInformation(line);
-                        long sourcePhone = Long.parseLong(information[0]);
-
-                        if (!accountHashMap.containsKey(sourcePhone)) {
-                            printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
-                            continue;
-                        }
-
-                        long destPhone = Long.parseLong(information[1]);
-                        String endTime = FormValidation.getUsageEndDate(information[2], 1);
-                        String startTime = information[2];
-                        int bytes = Integer.parseInt(information[3]);
-                        customerUsageDatabase.sendTextMessage(sourcePhone, destPhone, startTime, endTime, bytes);
-                    } else if (usageType == UsageType.TYPE_CALL) {
-                        information = getCallInformation(line);
-                        long sourcePhone = Long.parseLong(information[0]);
-                        long destPhone = Long.parseLong(information[1]);
-                        String startTime = information[2];
-                        String endTime = information[3];
-
-                        if (accountHashMap.containsKey(sourcePhone)) {
-                            printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
-                            continue;
-                        }
-
-                        customerUsageDatabase.sendPhoneCall(sourcePhone, destPhone, startTime, endTime);
-                    } else if (usageType == UsageType.TYPE_INTERNET) {
-                        information = getInternetInformation(line);
-                        long sourcePhone = Long.parseLong(information[0]);
-                        String usageDate = information[1];
-                        int megabytes = Integer.parseInt(information[2]);
-
-                        if (accountHashMap.containsKey(sourcePhone)) {
-                            printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
-                            continue;
-                        }
-
-                        customerUsageDatabase.useInternet(sourcePhone, usageDate, megabytes);
-                    } else {
-                        printError(usageType, lineCount, line, errorWriter);
-                    }
-                }
-                break;
+                errorWriter = new FileWriter("usage/error.log", true);
+                databaseWriter = new FileWriter("usage/usage_information.log", true);
+                processFile(bufferedReader, databaseWriter, errorWriter);
+                System.out.println("Finished processing file!");
+                System.out.println();
             } catch (FileNotFoundException e) {
                 System.out.println("Sorry, \"" + fileName + "\" could not be found. Please try again.");
             } catch (IOException e) {
-                System.out.println("Sorry there was an error reading that file. Please enter a different one.");
+                System.out.println("Sorry, there was an error reading that file. Please enter a different one.");
             } finally {
                 try {
                     if (inputFile != null) {
@@ -128,26 +82,92 @@ public class StreamInputInterface extends BaseInterface {
                 }
             }
         }
-        return true;
+    }
+
+    private void processFile(BufferedReader bufferedReader, FileWriter databaseWriter, FileWriter errorWriter)
+            throws IOException {
+        String line;
+        int lineCount = 0;
+        while ((line = bufferedReader.readLine()) != null) {
+            lineCount++;
+            UsageType usageType = getUsageType(line);
+            String[] information;
+            if (usageType == UsageType.TYPE_TEXT) {
+                information = getTextInformation(line);
+                long sourcePhone = Long.parseLong(information[0]);
+                long destinationPhone = Long.parseLong(information[1]);
+                String endTime = FormValidation.getUsageEndDate(information[2], 1);
+                String startTime = information[2];
+                int bytes = Integer.parseInt(information[3]);
+                if (!accountsTreeMap.containsKey(sourcePhone) && !accountsTreeMap.containsKey(destinationPhone)) {
+                    printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                    continue;
+                }
+                customerUsageDatabase.sendTextMessage(sourcePhone, destinationPhone, startTime, endTime, bytes);
+                printUsage(usageType, lineCount, line, databaseWriter);
+            } else if (usageType == UsageType.TYPE_CALL) {
+                information = getCallInformation(line);
+                long sourcePhone = Long.parseLong(information[0]);
+                long destinationPhone = Long.parseLong(information[1]);
+                String startTime = information[2];
+                String endTime = information[3];
+                if (!accountsTreeMap.containsKey(sourcePhone) && !accountsTreeMap.containsKey(destinationPhone)) {
+                    printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                    continue;
+                }
+                customerUsageDatabase.sendPhoneCall(sourcePhone, destinationPhone, startTime, endTime);
+                printUsage(usageType, lineCount, line, databaseWriter);
+            } else if (usageType == UsageType.TYPE_INTERNET) {
+                information = getInternetInformation(line);
+                long sourcePhone = Long.parseLong(information[0]);
+                String usageDate = information[1];
+                int megabytes = Integer.parseInt(information[2]);
+                if (!accountsTreeMap.containsKey(sourcePhone)) {
+                    printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
+                    continue;
+                }
+                customerUsageDatabase.useInternet(sourcePhone, usageDate, megabytes);
+                printUsage(usageType, lineCount, line, databaseWriter);
+            } else if (usageType != UsageType.TYPE_COMMENT) {
+                printError(usageType, lineCount, line, errorWriter);
+            }
+        }
     }
 
     private void printError(UsageType typeOfError, int lineCount, String line, FileWriter errorWriter) {
         String errorType;
+        System.out.println("Error processing file at line " + lineCount + ".");
         if (UsageType.TYPE_INVALID_FORMAT == typeOfError) {
             errorType = "<INVALID FORMATTING>";
-        } else if (UsageType.TYPE_UNKNOWN == typeOfError) {
+        } else if (UsageType.TYPE_UNKNOWN_USAGE == typeOfError) {
             errorType = "<UNKNOWN USAGE TYPE>";
         } else if (UsageType.TYPE_NO_ACCOUNT == typeOfError) {
-            errorType = "<SOURCE PHONE NOT TIED TO AN ACCOUNT>";
+            errorType = "<SOURCE/DESTINATION PHONE HAS NO ACCOUNT>";
+        } else if (UsageType.TYPE_INVALID_DATE == typeOfError) {
+            errorType = "<DATE INVALID>";
         } else {
             errorType = "<UNKNOWN ERROR>";
         }
-        String error = new Date().toString() + " - Error at line <" + lineCount + "> " + errorType +
-                " : " + line;
         try {
-            errorWriter.write(error);
+            errorWriter.append(FormValidation.getDate()).append(" - Error at line <").append(String.valueOf(lineCount))
+                    .append("> ").append(errorType).append(" : ").append(line).append('\n');
         } catch (IOException ignored) {
         }
+    }
+
+    private void printUsage(UsageType usageType, int lineCount, String line, FileWriter usageWriter) throws IOException {
+        String usageString;
+        if (usageType == UsageType.TYPE_TEXT) {
+            usageString = "<TEXT>";
+        } else if (usageType == UsageType.TYPE_CALL) {
+            usageString = "<CALL>";
+        } else if (usageType == UsageType.TYPE_INTERNET) {
+            usageString = "<INTERNET>";
+        } else {
+            throw new IllegalArgumentException("Invalid argument, found: " + usageType.toString());
+        }
+        usageWriter.append(FormValidation.getDate()).append(" at line ").append(String.valueOf(lineCount)).append(" ")
+                .append(usageString).append(" : ").append(line).append('\n');
     }
 
     private UsageType getUsageType(String line) {
@@ -172,25 +192,25 @@ public class StreamInputInterface extends BaseInterface {
             case "INTERNET":
                 return verifyInternet(tokens);
             default:
-                return UsageType.TYPE_UNKNOWN;
+                return UsageType.TYPE_UNKNOWN_USAGE;
         }
     }
 
     private UsageType verifyText(String[] tokens) {
-        if (tokens.length != 4) {
+        if (tokens.length != 5) {
             return UsageType.TYPE_INVALID_FORMAT;
         }
 
         if (!isPhoneValid(tokens[1])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_PHONE;
         }
 
         if (!isPhoneValid(tokens[2])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_PHONE;
         }
 
         if (!isTimeValid(tokens[3])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
 
         if (!isBytesValid(tokens[4])) {
@@ -316,60 +336,60 @@ public class StreamInputInterface extends BaseInterface {
     }
 
     private UsageType verifyCall(String[] tokens) {
-        if (tokens.length != 4) {
+        if (tokens.length != 5) {
             return UsageType.TYPE_INVALID_FORMAT;
         }
 
         if (!isPhoneValid(tokens[1])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_PHONE;
         }
 
         if (!isPhoneValid(tokens[2])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_PHONE;
         }
 
         if (!isTimeValid(tokens[3])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
         String[] timePieces = tokens[3].split(";");
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date startDate;
         try {
-            startDate = dateFormat.parse(timePieces[0] + " " + timePieces[2]);
+            startDate = dateFormat.parse(timePieces[0] + " " + timePieces[1]);
         } catch (ParseException e) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
 
         if (!isTimeValid(tokens[4])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
         timePieces = tokens[4].split(";");
         Date endDate;
         try {
-            endDate = dateFormat.parse(timePieces[0] + " " + timePieces[2]);
+            endDate = dateFormat.parse(timePieces[0] + " " + timePieces[1]);
         } catch (ParseException e) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
 
         //Check that the dates make sense (end date is after the start date)
         if (endDate.getTime() - startDate.getTime() <= 0) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
 
         return UsageType.TYPE_CALL;
     }
 
     private UsageType verifyInternet(String[] tokens) {
-        if (tokens.length != 3) {
+        if (tokens.length != 4) {
             return UsageType.TYPE_INVALID_FORMAT;
         }
 
         if (!isPhoneValid(tokens[1])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_PHONE;
         }
 
         if (!isTimeValid(tokens[2])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+            return UsageType.TYPE_INVALID_DATE;
         }
 
         if (!isInternetBytesValid(tokens[3])) {

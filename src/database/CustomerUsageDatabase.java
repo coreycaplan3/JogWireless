@@ -19,23 +19,73 @@ public class CustomerUsageDatabase extends CustomerDatabase {
     }
 
     /**
-     * Sends a text message from the given source phone to th
+     * Sends a text message to the given destination phone
      *
-     * @param sourcePhone  The phone that is sending the text message.
-     * @param destPhone    The phone that is receiving the text message.
-     * @param timeSent     The time that the source phone sent the text message.
-     * @param timeReceived The time that the receiving phone actually got the text message.
+     * @param sourcePhone      The phone that is sending the text message.
+     * @param destinationPhone The phone that is receiving the text message.
+     * @param timeSent         The time that the source phone sent the text message.
+     * @param timeReceived     The time that the receiving phone actually got the text message.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean sendTextMessage(long sourcePhone, long destPhone, String timeSent, String timeReceived) {
-        return sendTextMessage(sourcePhone, destPhone, timeSent, timeReceived, 1024);
+    public boolean sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
+        return sendTextMessage(sourcePhone, destinationPhone, timeSent, timeReceived, 1024);
     }
 
-    public boolean sendTextMessage(long sourcePhone, long destPhone, String timeSent, String timeReceived, int bytes) {
+    /**
+     * Receives a text message from the given destination phone.
+     *
+     * @param sourcePhone      The phone that is sending the text message.
+     * @param destinationPhone The phone that is receiving the text message.
+     * @param timeSent         The time that the source phone sent the text message.
+     * @param timeReceived     The time that the receiving phone actually got the text message.
+     * @return True if the text message sent successfully or false if it did not.
+     */
+    public boolean receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
+        return sendTextMessage(sourcePhone, destinationPhone, timeSent, timeReceived, 1024);
+    }
+
+    /**
+     * Receives a text message from the given destination phone.
+     *
+     * @param sourcePhone      The phone that is sending the text message.
+     * @param destinationPhone The phone that is receiving the text message.
+     * @param timeSent         The time that the source phone sent the text message.
+     * @param timeReceived     The time that the receiving phone actually got the text message.
+     * @return True if the text message sent successfully or false if it did not.
+     */
+    public boolean receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
+                                      int bytes) {
         try {
             String procedure = "{call SEND_TEXT_MESSAGE(" +
                     sourcePhone + ", " +
-                    destPhone + ", " +
+                    destinationPhone + ", " +
+                    "to_date(\'" + timeSent + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
+                    "to_date(\'" + timeReceived + "\', \'yyyy-MM-dd HH24:mi:ss\'), "
+                    + bytes + ")}";
+            databaseApi.executeProcedure(procedure);
+            System.out.println("Text received successfully!");
+            return true;
+        } catch (SQLException e) {
+            if (e.getErrorCode() == 20000) {
+                System.out.println("You cannot receive anymore text messages for the month. You reached your monthly " +
+                        "limit!");
+            } else {
+                e.printStackTrace();
+                System.out.println("Error receiving text message...");
+            }
+            return false;
+        } finally {
+            databaseApi.logout();
+        }
+    }
+
+
+    public boolean sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
+                                   int bytes) {
+        try {
+            String procedure = "{call SEND_TEXT_MESSAGE(" +
+                    sourcePhone + ", " +
+                    destinationPhone + ", " +
                     "to_date(\'" + timeSent + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
                     "to_date(\'" + timeReceived + "\', \'yyyy-MM-dd HH24:mi:ss\'), "
                     + bytes + ")}";
@@ -60,16 +110,16 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * Sends a text message from the given source phone to th
      *
      * @param sourcePhone The phone that is sending the text message.
-     * @param destPhone   The phone that is receiving the text message.
+     * @param destinationPhone   The phone that is receiving the text message.
      * @param startTime   The time that the source phone started the text phone call.
      * @param endTime     The time that the phone call was terminated between the two phones.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean sendPhoneCall(long sourcePhone, long destPhone, String startTime, String endTime) {
+    public boolean sendPhoneCall(long sourcePhone, long destinationPhone, String startTime, String endTime) {
         try {
             String procedure = "{call SEND_PHONE_CALL(" +
                     sourcePhone + ", " +
-                    destPhone + ", " +
+                    destinationPhone + ", " +
                     "to_date(\'" + startTime + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
                     "to_date(\'" + endTime + "\', \'yyyy-MM-dd HH24:mi:ss\')" +
                     ")}";
@@ -81,7 +131,7 @@ public class CustomerUsageDatabase extends CustomerDatabase {
                 System.out.println("You cannot make anymore phone calls for the month. You reached your monthly " +
                         "limit!");
             } else {
-                System.out.println("Error sending phone call...");
+                System.out.println("Error making phone call...");
             }
             return false;
         } finally {

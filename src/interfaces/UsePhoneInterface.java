@@ -1,6 +1,5 @@
 package interfaces;
 
-import com.sun.org.apache.xpath.internal.SourceTree;
 import database.CustomerDatabase;
 import database.CustomerUsageDatabase;
 import validation.FormValidation;
@@ -38,8 +37,10 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
             }
             System.out.println("***************************** Usage Menu *****************************");
             System.out.printf("%-20s %d\n", "Send a text message", 1);
-            System.out.printf("%-20s %d\n", "Make a phone call", 2);
-            System.out.printf("%-20s %d\n", "Use the internet", 3);
+            System.out.printf("%-20s %d\n", "Receive a text message", 2);
+            System.out.printf("%-20s %d\n", "Make a phone call", 3);
+            System.out.printf("%-20s %d\n", "Receive a phone call", 4);
+            System.out.printf("%-20s %d\n", "Use the internet", 5);
             System.out.printf("%-20s %d\n", "Go back to the main menu", -1);
             System.out.println("**********************************************************************");
             int response;
@@ -49,9 +50,15 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
                     sendTextMessage();
                     break;
                 } else if (response == 2) {
-                    makePhoneCall();
+                    receiveTextMessage();
                     break;
                 } else if (response == 3) {
+                    sendPhoneCall();
+                    break;
+                } else if (response == 4) {
+                    receivePhoneCall();
+                    break;
+                } else if (response == 5) {
                     useInternet();
                     break;
                 } else if (response == -1) {
@@ -139,26 +146,52 @@ public class UsePhoneInterface extends AbstractCustomerInterface {
     }
 
     private void sendTextMessage() {
-        long destPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you would like " +
-                "to send a text message:");
-        String timeSent = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the text was sent:");
+        long destinationPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you " +
+                "would like to send a text message:");
+        String timeSent = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the text " +
+                "was sent:");
         String timeReceived = FormValidation.getUsageEndDate(timeSent, 2);
         int textCount = FormValidation.getIntegerInput("Please enter the amount of texts you would like to send:", 250);
         System.out.println("Preparing to send text messages...");
         for (int i = 0; i < textCount; i++) {
-            customerUsageDatabase.sendTextMessage(customerPhoneNumber, destPhoneNumber, timeSent, timeReceived);
+            customerUsageDatabase.sendTextMessage(customerPhoneNumber, destinationPhoneNumber, timeSent, timeReceived);
         }
     }
 
-    private void makePhoneCall() {
-        long destPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you would like " +
-                "to send a phone call:");
+    private void receiveTextMessage() {
+        long sourcePhone = FormValidation.getPhoneNumber("Please enter the phone number from which you " +
+                "would like to receive a text message:");
+        String timeSent = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the text " +
+                "was sent to you:");
+        String timeReceived = FormValidation.getUsageEndDate(timeSent, 2);
+        int textCount = FormValidation.getIntegerInput("Please enter the amount of texts you would like to receive:",
+                250);
+        System.out.println("Preparing to receive text messages...");
+        for (int i = 0; i < textCount; i++) {
+            customerUsageDatabase.receiveTextMessage(sourcePhone, customerPhoneNumber, timeSent, timeReceived);
+        }
+    }
+
+    private void sendPhoneCall() {
+        long destinationPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number to which you " +
+                "would like to send a phone call:");
         String startTime = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the phone " +
                 "call was made:");
         int callDuration = FormValidation.getIntegerInput("Please enter the duration of the call in seconds:", 10800);
         String endTime = FormValidation.getUsageEndDate(startTime, callDuration);
         System.out.println("Preparing to make the phone call...");
-        customerUsageDatabase.sendPhoneCall(customerPhoneNumber, destPhoneNumber, startTime, endTime);
+        customerUsageDatabase.sendPhoneCall(customerPhoneNumber, destinationPhoneNumber, startTime, endTime);
+    }
+
+    private void receivePhoneCall() {
+        long destinationPhoneNumber = FormValidation.getPhoneNumber("Please enter the phone number from which you " +
+                "would like to receive a phone call:");
+        String startTime = FormValidation.getUsageStartDate("Please enter the day, month, and year, that the phone " +
+                "call was received:");
+        int callDuration = FormValidation.getIntegerInput("Please enter the duration of the call in seconds:", 10800);
+        String endTime = FormValidation.getUsageEndDate(startTime, callDuration);
+        System.out.println("Preparing to make the phone call...");
+        customerUsageDatabase.sendPhoneCall(destinationPhoneNumber, customerPhoneNumber, startTime, endTime);
     }
 
     private void useInternet() {

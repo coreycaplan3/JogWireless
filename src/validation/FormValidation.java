@@ -20,6 +20,14 @@ public final class FormValidation {
     }
 
     /**
+     * @return A string in the form of <i>2016-01-20 11:15:23</i> that represents the current date.
+     */
+    public static String getDate() {
+        Calendar calendar = Calendar.getInstance();
+        return getOnlyDateForDatabase(calendar) + " " + getOnlyTimeForDatabase(calendar);
+    }
+
+    /**
      * This method loops indefinitely until the user enters a valid integer.
      *
      * @param prompt The prompt to display to the user before requesting information.
