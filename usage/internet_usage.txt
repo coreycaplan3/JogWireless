@@ -1,2 +1,0 @@
-- This is a comment
-INTERNET 4611492777 2016-05-06;13:20:19 10MB
