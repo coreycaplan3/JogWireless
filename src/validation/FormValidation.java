@@ -243,6 +243,19 @@ public final class FormValidation {
         }
     }
 
+    public static String convertPhoneNumberFromDatabase(long phoneNumber) {
+        StringBuilder builder = new StringBuilder();
+        String phoneNumberString = String.valueOf(phoneNumber);
+        for (int i = 0; i < phoneNumberString.length() + 2; i++) {
+            if (i != 3 && i != 7) {
+                builder.append(phoneNumberString.charAt(i));
+            } else {
+                builder.append('-');
+            }
+        }
+        return builder.toString();
+    }
+
     /**
      * Gets a start date and time that can be read by the database. The String takes the form as
      * "yyyy-MM-dd HH24:mi:ss" so it an be converted to an SQL date object.

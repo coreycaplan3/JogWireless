@@ -330,7 +330,7 @@ public class CustomerDatabase {
                 "  join plans on ACCOUNT.CURRENT_PLAN = PLANS.PLAN_ID\n" +
                 "WHERE C_ID = " + customerId + "\n" +
                 "and IS_RESIDENTIAL = " + residential;
-        return getCustomerPhones(query);
+        return customerPhones(query);
     }
 
     /**
@@ -603,7 +603,7 @@ public class CustomerDatabase {
                 int planId = resultSet.getInt(Plans.PLAN_ID);
 
                 PlanParser planParser = new PlanParser(planName, hardLimit, limitTexts, limitCallsSeconds / 60,
-                        limitInternetMegabytes / 1024, rateTexts, rateCallsSeconds * 60, rateInternet* 1024,
+                        limitInternetMegabytes / 1024, rateTexts, rateCallsSeconds * 60, rateInternet * 1024,
                         overdraftRateTexts, overdraftRateCalls * 60, overdraftRateInternet * 1024, baseRate);
                 planIds.add(planId);
                 planDescriptions.add(planParser.parse());

@@ -1,5 +1,7 @@
 package database;
 
+import validation.FormValidation;
+
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -51,7 +53,12 @@ final class ResultSetHelper {
                     System.out.printf("%-" + minimumSpacing + "s", object[i]);
                 } else if (columnTypes.get(i) == LONG) {
                     object[i] = resultSet.getLong(columnNames.get(i));
-                    System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                    if ((object[i] + "").length() == 10) {
+                        System.out.printf("%-" + minimumSpacing + "s", FormValidation
+                                .convertPhoneNumberFromDatabase((Long) object[i]));
+                    } else {
+                        System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                    }
                 } else if (columnTypes.get(i) == DOUBLE) {
                     object[i] = resultSet.getDouble(columnNames.get(i));
                     System.out.printf("%-" + minimumSpacing + ".2f", object[i]);
@@ -111,7 +118,12 @@ final class ResultSetHelper {
                         System.out.printf("%-" + minimumSpacing + "s", object[i]);
                     } else if (columnTypes.get(i) == LONG) {
                         object[i] = resultSet.getLong(columnNames.get(i));
-                        System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                        if ((object[i] + "").length() == 10) {
+                            System.out.printf("%-" + minimumSpacing + "s", FormValidation
+                                    .convertPhoneNumberFromDatabase((Long) object[i]));
+                        } else {
+                            System.out.printf("%-" + minimumSpacing + "s", object[i]);
+                        }
                     } else if (columnTypes.get(i) == DOUBLE) {
                         object[i] = resultSet.getDouble(columnNames.get(i));
                         System.out.printf("%.2-" + minimumSpacing + "f", object[i]);
