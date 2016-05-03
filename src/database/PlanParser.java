@@ -15,7 +15,7 @@ public class PlanParser {
     private final double rateCallsMinutes;
     private final double rateInternetGigabytes;
     private final String rateTextsString;
-    private final String rateCallsString;
+    private final String rateCallsMinutesString;
     private final String rateInternetString;
     private final String overdraftRateTextsString;
     private final String overdraftRateCallsString;
@@ -65,13 +65,13 @@ public class PlanParser {
         this.rateCallsMinutes = rateCallsMinutes;
         this.rateInternetGigabytes = rateInternetGigabytes;
         this.baseRate = baseRate;
-        rateTextsString = String.format("$%.2f", rateTexts);
-        rateCallsString = String.format("$%.2f", rateCallsMinutes);
-        rateInternetString = String.format("$%.2f", rateInternetGigabytes);
-        overdraftRateTextsString = String.format("$%.2f", overdraftRateTexts);
-        overdraftRateCallsString = String.format("$%.2f", overdraftRateCallsMinutes);
-        overdraftRateInternetString = String.format("$%.2f", overdraftRateInternetGigabytes);
-        baseRateString = String.format("$%.2f", this.baseRate);
+        rateTextsString = String.format("$%.4f", rateTexts);
+        rateCallsMinutesString = String.format("$%.4f", rateCallsMinutes);
+        rateInternetString = String.format("$%.4f", rateInternetGigabytes);
+        overdraftRateTextsString = String.format("$%.4f", overdraftRateTexts);
+        overdraftRateCallsString = String.format("$%.4f", overdraftRateCallsMinutes);
+        overdraftRateInternetString = String.format("$%.4f", overdraftRateInternetGigabytes);
+        baseRateString = String.format("$%.4f", baseRate);
     }
 
     /**
@@ -95,7 +95,7 @@ public class PlanParser {
             stringBuilder.append("Texts are ").append(rateTextsString).append(" per incoming and outgoing text.\n");
         }
         if (rateCallsMinutes != 0) {
-            stringBuilder.append("Phone calls are ").append(rateCallsString).append(" per minute on the phone.\n");
+            stringBuilder.append("Phone calls are ").append(rateCallsMinutesString).append(" per minute on the phone.\n");
         }
         if (rateInternetGigabytes != 0) {
             stringBuilder.append("Data costs are ").append(rateInternetString).append(" per gigabyte of data.\n");
@@ -131,7 +131,8 @@ public class PlanParser {
         }
 
         if (rateCallsMinutes != 0) {
-            stringBuilder.append("Incoming and outgoing phone calls are ").append(rateCallsMinutes).append(" per minute.\n");
+            stringBuilder.append("Incoming and outgoing phone calls are ").append(rateCallsMinutesString)
+                    .append(" per minute.\n");
         }
         if (limitCallsMinutes != 0) {
             stringBuilder.append("If you go over the limit of ").append(limitCallsMinutes).append(" minutes, " +

@@ -63,10 +63,10 @@ final class DatabaseApi {
      * @return Always true.
      * @throws SQLException
      */
+    @SuppressWarnings("ConstantConditions")
     ResultSet executeQuery(String query) throws SQLException {
         Statement statement = login();
-        ResultSet resultSet = statement.executeQuery(query);
-        return resultSet;
+        return statement.executeQuery(query);
     }
 
     /**

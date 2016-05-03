@@ -1,9 +1,12 @@
 - Example Usage for Texts. This is also comment notation.
 - This is the format:
-- <USAGE_TYPE> <SOURCE_PHONE> <DEST_PHONE> <YYYY-MM-DD;HH24:MI:SS> <BYTES>
+- <USAGE_TYPE> <SOURCE_PHONE> <DEST_PHONE> <YYYY-MM-DD;HH:MI:SS> <BYTES>
 -
 - Note all parameters are separated by whitespace, the date/time is separated by semi-colon and you must append a
 - capital 'B' onto the byte amount.
 -
-- This is a valid text message
-TEXT 732-123-1234 908-123-1234 2016-05-06;13:20:19 10B
+- Moreover, the phone number must be of the form "XXX-XXX-XXXX"
+- These are valid text messages (with a fake phone number)
+TEXT 732-123-1234 908-123-1234 2016-05-06;19:20:19 104B
+TEXT 908-123-1234 908-123-1234 2013-11-06;07:20:19 264B
+TEXT 662-123-1234 908-123-1234 2014-04-06;14:20:19 1090B

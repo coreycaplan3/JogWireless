@@ -38,7 +38,7 @@ public final class FormValidation {
             System.out.println(prompt);
             String s = scanner.nextLine();
             if (isIntegerValid(s)) {
-                if (Integer.parseInt(s) < maxNumber) {
+                if (Integer.parseInt(s) <= maxNumber) {
                     return Integer.parseInt(s);
                 } else {
                     System.out.println("Please enter a number that is less than " + maxNumber);
@@ -111,7 +111,8 @@ public final class FormValidation {
     private static boolean isValidString(String s) {
         for (int i = 0; i < s.length(); i++) {
             if (!Character.isLetterOrDigit(s.charAt(i)) && !Character.isSpaceChar(s.charAt(i)) && s.charAt(i) != '-'
-                    && s.charAt(i) != '(' && s.charAt(i) != ')' && s.charAt(i) != '_') {
+                    && s.charAt(i) != '(' && s.charAt(i) != ')' && s.charAt(i) != '_' && s.charAt(i) != '&'
+                    && s.charAt(i) != ',') {
                 return false;
             }
         }
@@ -163,7 +164,7 @@ public final class FormValidation {
     public static String getBillingPeriod(String prompt) {
         System.out.println(prompt);
         while (true) {
-            String billingPeriod = getStringInput("Please enter the date in the form of \"yyyy-MM\"", "date", 8);
+            String billingPeriod = getStringInput("Please enter the date in the form of \"yyyy-mm\"", "date", 8);
             if (billingPeriod.length() != 7) {
                 System.out.println("Incorrect formatting of the date.");
             } else {
@@ -183,8 +184,9 @@ public final class FormValidation {
         try {
             int year = Integer.parseInt(dateToCheck.substring(0, 4));
             int month = Integer.parseInt(dateToCheck.substring(5, 7));
-            if (year < 1900 || year > 2100) {
-                System.out.println("Please enter a valid year.");
+            Calendar calendar = Calendar.getInstance();
+            if (year < 2000 || year > calendar.get(Calendar.YEAR)) {
+                System.out.println("Jog was founded in 2000, please enter a year at that point up until the current year.");
                 return false;
             }
             if (month < 1 || month > 12) {
@@ -200,7 +202,6 @@ public final class FormValidation {
                     System.out.println("Please enter the date with valid formatting.");
                     return false;
                 }
-                Calendar calendar = Calendar.getInstance();
                 calendar.set(Calendar.YEAR, year);
                 calendar.set(Calendar.MONTH, month - 1);
 
@@ -225,32 +226,75 @@ public final class FormValidation {
      */
     public static long getPhoneNumber(String prompt) {
         System.out.println(prompt);
-        System.out.println("The phone number can be in any form, but it must contain 10 digits.");
-        System.out.println("Some valid forms include \"(XXX) XXX XXXX\" or \"XXX-XXX-XXXX\"");
+        System.out.println("The phone number must be of the form XXX-XXX-XXXX");
         while (true) {
-            String phoneNumber = "";
             String input = scanner.nextLine();
-            for (int i = 0; i < input.length(); i++) {
-                if (Character.isDigit(input.charAt(i))) {
-                    phoneNumber += input.charAt(i);
-                }
+            if (isPhoneNumberValid(input, true)) {
+                return convertPhoneNumberToDatabase(input);
             }
-            if (phoneNumber.length() == 10) {
-                return Long.parseLong(phoneNumber);
-            } else {
-                System.out.println("Please enter a valid 10 digit phone number.");
-            }
+            System.out.println(prompt);
         }
     }
 
+    /**
+     * @param phoneNumber A phone number of the form <i>XXX-XXX-XXXX</i>
+     * @return A long that converts that removes the dashes from that phone number.
+     */
+    public static long convertPhoneNumberToDatabase(String phoneNumber) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < phoneNumber.length(); i++) {
+            if (Character.isDigit(phoneNumber.charAt(i))) {
+                builder.append(phoneNumber.charAt(i));
+            }
+        }
+        return Long.parseLong(builder.toString());
+    }
+
+    public static boolean isPhoneNumberValid(String phoneNumber, boolean shouldShowOutput) {
+        if (phoneNumber == null || phoneNumber.length() != 12) {
+            if (shouldShowOutput) {
+                System.out.println("Please enter a valid phone number.");
+            }
+            return false;
+        }
+        for (int i = 0; i < phoneNumber.length(); i++) {
+            if (i == 3 || i == 7) {
+                if (phoneNumber.charAt(i) != '-') {
+                    if (shouldShowOutput) {
+                        System.out.println("Please enter a valid phone number.");
+                    }
+                    return false;
+                }
+            } else {
+                if (!Character.isDigit(phoneNumber.charAt(i))) {
+                    if (shouldShowOutput) {
+                        System.out.println("Please enter a valid phone number.");
+                    }
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @param phoneNumber A phone number that contains 10 digits, from the database.
+     * @return A phone number of the form <i>XXX-XXX-XXXX</i>
+     */
     public static String convertPhoneNumberFromDatabase(long phoneNumber) {
         StringBuilder builder = new StringBuilder();
         String phoneNumberString = String.valueOf(phoneNumber);
         for (int i = 0; i < phoneNumberString.length() + 2; i++) {
-            if (i != 3 && i != 7) {
+            if (i < 3) {
                 builder.append(phoneNumberString.charAt(i));
-            } else {
+            } else if (i == 3) {
                 builder.append('-');
+            } else if (i == 7) {
+                builder.append('-');
+            } else if (i < 7) {
+                builder.append(phoneNumberString.charAt(i - 1));
+            } else if (i > 7) {
+                builder.append(phoneNumberString.charAt(i - 2));
             }
         }
         return builder.toString();

@@ -18,6 +18,10 @@ public class CustomerUsageDatabase extends CustomerDatabase {
         databaseApi = DatabaseApi.getInstance();
     }
 
+    public enum UsageResult {
+        UNKNOWN, NO_SERVICE, SUCCESS
+    }
+
     /**
      * Sends a text message to the given destination phone
      *
@@ -27,7 +31,7 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * @param timeReceived     The time that the receiving phone actually got the text message.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
+    public UsageResult sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
         return sendTextMessage(sourcePhone, destinationPhone, timeSent, timeReceived, 1024);
     }
 
@@ -40,8 +44,8 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * @param timeReceived     The time that the receiving phone actually got the text message.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
-        return sendTextMessage(sourcePhone, destinationPhone, timeSent, timeReceived, 1024);
+    public UsageResult receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived) {
+        return receiveTextMessage(sourcePhone, destinationPhone, timeSent, timeReceived, 1024);
     }
 
     /**
@@ -53,10 +57,10 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * @param timeReceived     The time that the receiving phone actually got the text message.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
-                                      int bytes) {
+    public UsageResult receiveTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
+                                          int bytes) {
         try {
-            String procedure = "{call SEND_TEXT_MESSAGE(" +
+            String procedure = "{call RECEIVE_TEXT_MESSAGE(" +
                     sourcePhone + ", " +
                     destinationPhone + ", " +
                     "to_date(\'" + timeSent + "\', \'yyyy-MM-dd HH24:mi:ss\'), " +
@@ -64,24 +68,24 @@ public class CustomerUsageDatabase extends CustomerDatabase {
                     + bytes + ")}";
             databaseApi.executeProcedure(procedure);
             System.out.println("Text received successfully!");
-            return true;
+            return UsageResult.SUCCESS;
         } catch (SQLException e) {
             if (e.getErrorCode() == 20000) {
                 System.out.println("You cannot receive anymore text messages for the month. You reached your monthly " +
                         "limit!");
+                return UsageResult.NO_SERVICE;
             } else {
-                e.printStackTrace();
                 System.out.println("Error receiving text message...");
+                return UsageResult.UNKNOWN;
             }
-            return false;
         } finally {
             databaseApi.logout();
         }
     }
 
 
-    public boolean sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
-                                   int bytes) {
+    public UsageResult sendTextMessage(long sourcePhone, long destinationPhone, String timeSent, String timeReceived,
+                                       int bytes) {
         try {
             String procedure = "{call SEND_TEXT_MESSAGE(" +
                     sourcePhone + ", " +
@@ -91,16 +95,16 @@ public class CustomerUsageDatabase extends CustomerDatabase {
                     + bytes + ")}";
             databaseApi.executeProcedure(procedure);
             System.out.println("Text sent successfully!");
-            return true;
+            return UsageResult.SUCCESS;
         } catch (SQLException e) {
             if (e.getErrorCode() == 20000) {
                 System.out.println("You cannot send anymore text messages for the month. You reached your monthly " +
                         "limit!");
+                return UsageResult.NO_SERVICE;
             } else {
-                e.printStackTrace();
                 System.out.println("Error sending text message...");
+                return UsageResult.UNKNOWN;
             }
-            return false;
         } finally {
             databaseApi.logout();
         }
@@ -109,13 +113,13 @@ public class CustomerUsageDatabase extends CustomerDatabase {
     /**
      * Sends a text message from the given source phone to th
      *
-     * @param sourcePhone The phone that is sending the text message.
-     * @param destinationPhone   The phone that is receiving the text message.
-     * @param startTime   The time that the source phone started the text phone call.
-     * @param endTime     The time that the phone call was terminated between the two phones.
+     * @param sourcePhone      The phone that is sending the text message.
+     * @param destinationPhone The phone that is receiving the text message.
+     * @param startTime        The time that the source phone started the text phone call.
+     * @param endTime          The time that the phone call was terminated between the two phones.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean sendPhoneCall(long sourcePhone, long destinationPhone, String startTime, String endTime) {
+    public UsageResult sendPhoneCall(long sourcePhone, long destinationPhone, String startTime, String endTime) {
         try {
             String procedure = "{call SEND_PHONE_CALL(" +
                     sourcePhone + ", " +
@@ -125,15 +129,16 @@ public class CustomerUsageDatabase extends CustomerDatabase {
                     ")}";
             databaseApi.executeProcedure(procedure);
             System.out.println("Phone call was successful!");
-            return true;
+            return UsageResult.SUCCESS;
         } catch (SQLException e) {
             if (e.getErrorCode() == 20000) {
                 System.out.println("You cannot make anymore phone calls for the month. You reached your monthly " +
                         "limit!");
+                return UsageResult.NO_SERVICE;
             } else {
                 System.out.println("Error making phone call...");
+                return UsageResult.UNKNOWN;
             }
-            return false;
         } finally {
             databaseApi.logout();
         }
@@ -147,7 +152,7 @@ public class CustomerUsageDatabase extends CustomerDatabase {
      * @param megabyteAmount The amount of data that should be used, in megabytes.
      * @return True if the text message sent successfully or false if it did not.
      */
-    public boolean useInternet(long sourcePhone, String usageDate, int megabyteAmount) {
+    public UsageResult useInternet(long sourcePhone, String usageDate, int megabyteAmount) {
         try {
             String procedure = "{call USE_INTERNET(" +
                     sourcePhone + ", " +
@@ -155,15 +160,15 @@ public class CustomerUsageDatabase extends CustomerDatabase {
                     megabyteAmount + ")}";
             databaseApi.executeProcedure(procedure);
             System.out.println("Internet usage successful!");
-            return true;
+            return UsageResult.SUCCESS;
         } catch (SQLException e) {
             if (e.getErrorCode() == 20000) {
                 System.out.println("You cannot use anymore data for the month. You reached your monthly limit!");
+                return UsageResult.NO_SERVICE;
             } else {
-                e.printStackTrace();
                 System.out.println("Error using internet...");
+                return UsageResult.UNKNOWN;
             }
-            return false;
         } finally {
             databaseApi.logout();
         }

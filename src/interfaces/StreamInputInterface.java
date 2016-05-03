@@ -1,6 +1,7 @@
 package interfaces;
 
 import database.CustomerUsageDatabase;
+import database.CustomerUsageDatabase.UsageResult;
 import validation.FormValidation;
 
 import java.io.*;
@@ -25,7 +26,9 @@ public class StreamInputInterface extends BaseInterface {
 
     private enum UsageType {
         TYPE_TEXT, TYPE_CALL, TYPE_INTERNET, TYPE_COMMENT, TYPE_UNKNOWN_USAGE, TYPE_INVALID_FORMAT, TYPE_INVALID_DATE,
-        TYPE_INVALID_PHONE, TYPE_NO_ACCOUNT
+        TYPE_INVALID_PHONE, TYPE_NO_ACCOUNT, TYPE_NO_SERVICE, TYPE_UNKNOWN_SQL_ERROR, TYPE_SOURCE_AND_DEST_SAME,
+        TYPE_END_BEFORE_START, TYPE_TOO_MANY_BYTES, TYPE_TOO_MANY_MEGABYTES, TYPE_PHONE_CALL_TOO_LONG,
+        TYPE_TOO_FEW_BYTES, TYPE_TOO_FEW_MEGABYTES
     }
 
     public StreamInputInterface() {
@@ -92,6 +95,7 @@ public class StreamInputInterface extends BaseInterface {
             lineCount++;
             UsageType usageType = getUsageType(line);
             String[] information;
+            UsageResult usageResult;
             if (usageType == UsageType.TYPE_TEXT) {
                 information = getTextInformation(line);
                 long sourcePhone = Long.parseLong(information[0]);
@@ -103,8 +107,8 @@ public class StreamInputInterface extends BaseInterface {
                     printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
                     continue;
                 }
-                customerUsageDatabase.sendTextMessage(sourcePhone, destinationPhone, startTime, endTime, bytes);
-                printUsage(usageType, lineCount, line, databaseWriter);
+                usageResult = customerUsageDatabase.sendTextMessage(sourcePhone, destinationPhone, startTime, endTime,
+                        bytes);
             } else if (usageType == UsageType.TYPE_CALL) {
                 information = getCallInformation(line);
                 long sourcePhone = Long.parseLong(information[0]);
@@ -115,8 +119,7 @@ public class StreamInputInterface extends BaseInterface {
                     printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
                     continue;
                 }
-                customerUsageDatabase.sendPhoneCall(sourcePhone, destinationPhone, startTime, endTime);
-                printUsage(usageType, lineCount, line, databaseWriter);
+                usageResult = customerUsageDatabase.sendPhoneCall(sourcePhone, destinationPhone, startTime, endTime);
             } else if (usageType == UsageType.TYPE_INTERNET) {
                 information = getInternetInformation(line);
                 long sourcePhone = Long.parseLong(information[0]);
@@ -126,11 +129,42 @@ public class StreamInputInterface extends BaseInterface {
                     printError(UsageType.TYPE_NO_ACCOUNT, lineCount, line, errorWriter);
                     continue;
                 }
-                customerUsageDatabase.useInternet(sourcePhone, usageDate, megabytes);
-                printUsage(usageType, lineCount, line, databaseWriter);
+                usageResult = customerUsageDatabase.useInternet(sourcePhone, usageDate, megabytes);
             } else if (usageType != UsageType.TYPE_COMMENT) {
                 printError(usageType, lineCount, line, errorWriter);
+                continue;
+            } else {
+                continue;
             }
+            if (usageResult == UsageResult.SUCCESS) {
+                printUsage(usageType, lineCount, line, databaseWriter);
+            } else if (usageResult == UsageResult.NO_SERVICE) {
+                printError(UsageType.TYPE_NO_SERVICE, usageType, lineCount, line, errorWriter);
+            } else {
+                printError(UsageType.TYPE_UNKNOWN_SQL_ERROR, lineCount, line, errorWriter);
+            }
+        }
+    }
+
+    private void printError(UsageType serviceError, UsageType typeOfServiceError, int lineCount, String line,
+                            FileWriter errorWriter) {
+        String errorType;
+        if (UsageType.TYPE_NO_SERVICE != serviceError) {
+            throw new IllegalArgumentException("Invalid argument. Expected no service!");
+        }
+        if (typeOfServiceError == UsageType.TYPE_TEXT) {
+            errorType = "<HARD LIMIT FOR TEXTS REACHED>";
+        } else if (typeOfServiceError == UsageType.TYPE_CALL) {
+            errorType = "<HARD LIMIT FOR CALLS REACHED>";
+        } else if (typeOfServiceError == UsageType.TYPE_INTERNET) {
+            errorType = "<HARD LIMIT FOR INTERNET REACHED>";
+        } else {
+            throw new IllegalArgumentException("Invalid argument, found: " + typeOfServiceError.toString());
+        }
+        try {
+            errorWriter.append(FormValidation.getDate()).append(" - Error at line <").append(String.valueOf(lineCount))
+                    .append("> ").append(errorType).append(" : ").append(line).append('\n');
+        } catch (IOException ignored) {
         }
     }
 
@@ -145,6 +179,12 @@ public class StreamInputInterface extends BaseInterface {
             errorType = "<SOURCE/DESTINATION PHONE HAS NO ACCOUNT>";
         } else if (UsageType.TYPE_INVALID_DATE == typeOfError) {
             errorType = "<DATE INVALID>";
+        } else if (UsageType.TYPE_UNKNOWN_SQL_ERROR == typeOfError) {
+            errorType = "<SQL ERROR DURING EXECUTION>";
+        } else if (UsageType.TYPE_SOURCE_AND_DEST_SAME == typeOfError) {
+            errorType = "<SOURCE AND DESTINATION THE SAME>";
+        } else if (UsageType.TYPE_END_BEFORE_START == typeOfError) {
+            errorType = "<END TIME BEFORE START TIME>";
         } else {
             errorType = "<UNKNOWN ERROR>";
         }
@@ -209,6 +249,10 @@ public class StreamInputInterface extends BaseInterface {
             return UsageType.TYPE_INVALID_PHONE;
         }
 
+        if (getPhone(tokens[1]).equals(getPhone(tokens[2]))) {
+            return UsageType.TYPE_SOURCE_AND_DEST_SAME;
+        }
+
         if (!isTimeValid(tokens[3])) {
             return UsageType.TYPE_INVALID_DATE;
         }
@@ -238,18 +282,8 @@ public class StreamInputInterface extends BaseInterface {
     }
 
     private boolean isPhoneValid(String rawPhone) {
-        if (rawPhone == null || rawPhone.length() == 0) {
-            return false;
-        }
+        return FormValidation.isPhoneNumberValid(rawPhone, false);
 
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < rawPhone.length(); i++) {
-            if (Character.isDigit(rawPhone.charAt(i))) {
-                builder.append(rawPhone.charAt(i));
-            }
-        }
-        String phone = builder.toString();
-        return phone.length() == 10;
     }
 
     private boolean isTimeValid(String rawTime) {
@@ -284,7 +318,7 @@ public class StreamInputInterface extends BaseInterface {
         } catch (NumberFormatException e) {
             return false;
         }
-        if (year < 1900 || year > 2100) {
+        if (year < 2000 || year > 2100) {
             return false;
         }
         calendar.set(Calendar.YEAR, year);
@@ -348,6 +382,10 @@ public class StreamInputInterface extends BaseInterface {
             return UsageType.TYPE_INVALID_PHONE;
         }
 
+        if (getPhone(tokens[1]).equals(getPhone(tokens[2]))) {
+            return UsageType.TYPE_SOURCE_AND_DEST_SAME;
+        }
+
         if (!isTimeValid(tokens[3])) {
             return UsageType.TYPE_INVALID_DATE;
         }
@@ -373,7 +411,7 @@ public class StreamInputInterface extends BaseInterface {
 
         //Check that the dates make sense (end date is after the start date)
         if (endDate.getTime() - startDate.getTime() <= 0) {
-            return UsageType.TYPE_INVALID_DATE;
+            return UsageType.TYPE_END_BEFORE_START;
         }
 
         return UsageType.TYPE_CALL;
@@ -414,7 +452,7 @@ public class StreamInputInterface extends BaseInterface {
         } catch (NumberFormatException e) {
             return false;
         }
-        return !(megabytes <= 0 || megabytes > 100000);
+        return !(megabytes <= 0 || megabytes > 10000);
     }
 
     private String[] getTextInformation(String sanitizedLine) {

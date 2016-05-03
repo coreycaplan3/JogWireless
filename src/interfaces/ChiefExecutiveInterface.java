@@ -20,10 +20,10 @@ public class ChiefExecutiveInterface extends BaseInterface {
     @Override
     public boolean performTransaction() {
         System.out.println("****************************** CEO Menu ******************************");
-        System.out.printf("%-75s %d\n", "See all of Jog\'s accounts receivable", 1);
-        System.out.printf("%-75s %d\n", "Get an in-depth breakdown of Jog\'s accounts receivable (by customer)", 2);
-        System.out.printf("%-75s %d\n", "See all of Jog\'s cash collected", 3);
-        System.out.printf("%-75s %d\n", "Get an in-depth break down of Jog\'s cash collected (by customer)", 4);
+        System.out.printf("%-75s %d\n", "See Jog\'s total accounts receivable", 1);
+        System.out.printf("%-75s %d\n", "Get an in-depth breakdown of Jog\'s accounts receivable (by account)", 2);
+        System.out.printf("%-75s %d\n", "See Jog\'s total cash collected", 3);
+        System.out.printf("%-75s %d\n", "Get an in-depth break down of Jog\'s cash collected (by account)", 4);
         System.out.printf("%-75s %d\n", "See Jog\'s customers whose bills are past due", 5);
         System.out.printf("%-75s %d\n", "Create a new billing plan", 6);
         System.out.printf("%-75s %d\n", "Create a new phone to add to Jog\'s inventory", 7);
@@ -92,7 +92,7 @@ public class ChiefExecutiveInterface extends BaseInterface {
 
     private void createNewBillingPlan() {
         String planName = FormValidation.getStringInput("Please enter the plan\'s name or -q to quit:", "plan name",
-                50);
+                30);
         if (planName.equals("-q")) {
             return;
         }
@@ -348,8 +348,8 @@ public class ChiefExecutiveInterface extends BaseInterface {
 
     private void createNewPhone() {
         String manufacturer = FormValidation.getStringInput("Please enter the manufacturer of the phone:",
-                "manufacturer", 45);
-        String model = FormValidation.getStringInput("Please enter the model of the phone:", "model", 45);
+                "manufacturer", 30);
+        String model = FormValidation.getStringInput("Please enter the model of the phone:", "model", 30);
         System.out.println("Are you sure that you would like to create this phone?");
         boolean shouldCreatePhone = FormValidation.getTrueOrFalse();
         if (!shouldCreatePhone) {

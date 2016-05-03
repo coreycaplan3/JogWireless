@@ -35,24 +35,39 @@ public class BusinessManagingInterface extends AbstractCustomerInterface {
             }
         }
         System.out.println("*********************** Corporate Account Menu ***********************");
-        System.out.printf("%-45s %d\n", "Upgrade a phone and trade in the old one:", 1);
-        System.out.printf("%-45s %d\n", "Report a phone as lost, stolen, or found:", 2);
-        System.out.printf("%-45s %d\n", "Add a person to your business\'s account:", 3);
-        System.out.printf("%-45s %d\n", "Change your account\'s plan:", 4);
-        System.out.printf("%-45s %d\n", "View your account\'s billing information", 5);
-        System.out.printf("%-45s %d\n", "Pay one of your account\'s bills", 6);
+        System.out.printf("%-45s %d\n", "View basic information about your account", 1);
+        System.out.printf("%-45s %d\n", "Change basic information", 2);
+        System.out.printf("%-45s %d\n", "Upgrade a phone and trade in the old one", 3);
+        System.out.printf("%-45s %d\n", "Report a phone as lost, stolen, or found", 4);
+        System.out.printf("%-45s %d\n", "Add a person to your business\'s account", 5);
+        System.out.printf("%-45s %d\n", "Change your account\'s plan", 6);
+        System.out.printf("%-45s %d\n", "View your account\'s billing information", 7);
+        System.out.printf("%-45s %d\n", "Pay one of your account\'s bills", 8);
         System.out.printf("%-45s %d\n", "Go back to the interface screen", -1);
         System.out.println("**********************************************************************");
         while (true) {
             int choice = FormValidation.getIntegerInput("Select an option:", 10);
             String accountId;
             if (choice == 1) {
-                performUpgradePhone(getCustomerId(), 1);
+                accountId = getAccountIdFromCustomerId(getCustomerId());
+                if (accountId == null) {
+                    System.out.println("You must be the owner of a business account to view account information!");
+                    System.out.println("Returning to the selection screen...");
+                    System.out.println();
+                    break;
+                }
+                viewAccountInformation(accountId);
                 break;
             } else if (choice == 2) {
-                performReportPhone(getCustomerId());
+                changeBasicInformation();
                 break;
             } else if (choice == 3) {
+                performUpgradePhone(getCustomerId(), 1);
+                break;
+            } else if (choice == 4) {
+                performReportPhone(getCustomerId());
+                break;
+            } else if (choice == 5) {
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a business account to add a customer!");
@@ -62,7 +77,7 @@ public class BusinessManagingInterface extends AbstractCustomerInterface {
                 }
                 addCustomerToAccount(accountId, 1);
                 break;
-            } else if (choice == 4) {
+            } else if (choice == 6) {
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a business account to change the billing plan!");
@@ -72,7 +87,7 @@ public class BusinessManagingInterface extends AbstractCustomerInterface {
                 }
                 changeAccountPlan(accountId);
                 break;
-            } else if (choice == 5) {
+            } else if (choice == 7) {
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a business account to view billing information!");
@@ -82,7 +97,7 @@ public class BusinessManagingInterface extends AbstractCustomerInterface {
                 }
                 performShowBilling(accountId);
                 break;
-            } else if (choice == 6) {
+            } else if (choice == 8) {
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a business account to pay a bill!");
