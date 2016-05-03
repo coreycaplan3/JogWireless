@@ -4,63 +4,134 @@ CSE 341-010
 May 6, 2016
 Final Project
 
-Hello, and thank you for taking the time to look at my project for CSE 341. I put a lot of time into it and came across some major blunders and "eureka" moments along the way.
+Hello, and thank you for taking the time to look at my project for CSE 341. I put a lot of time into it and came across
+some major blunders and "eureka" moments along the way.
 
-With respect to the ER diagram, I realized after the submission that I forgot to add two minor things that more accurately reflect the state of my database. Firstly, in the "STOCKS" relationship set between "STORE" and "PHONE_MODEL" I forgot to add the attribute "QUANTITY" which would reflect the amount of each "PHONE_ID" found in each store. The other minor thing is that I accidentally added a relationship set between "TEXT_LOG" and "CALL_LOG" that is not actually in existance in my database. Since there is no gauarantee that the receiver or sender of the text/call is a Jog Wireless phone, I couldn't add a relationship between those two entity sets and the "SERVICE" entity set. In SQL, this would mean that I did not add any foreign keys to the "TEXT_LOG" or "CALL_LOG" tables that link them to a phone number in the "SERVICE" table.
+With respect to the ER diagram, I realized after the submission that I forgot to add two minor things that more
+accurately reflect the state of my database. Firstly, in the "STOCKS" relationship set between "STORE" and
+"PHONE_MODEL" I forgot to add the attribute "QUANTITY" which would reflect the amount of each "PHONE_ID" found in each
+store. The other minor thing is that I accidentally added a relationship set between "TEXT_LOG" and "CALL_LOG" that is
+not actually in existance in my database. Since there is no gauarantee that the receiver or sender of the text/call is
+a Jog Wireless phone, I couldn't add a relationship between those two entity sets and the "SERVICE" entity set. In SQL,
+this would mean that I did not add any foreign keys to the "TEXT_LOG" or "CALL_LOG" tables that link them to a phone
+number in the "SERVICE" table.
 
-A different blunder I ran into when I was nearing the end of the project was that I should not have calculated quantity the way I did for each store. Having a quantity attribute is really redundant and introduces a lot of complexities with ensuring that this number stays in-line with the actual amount of phones that Jog has in inventory. Moreover, you cannot keep track of each individual phone (which store in which it's located), because there is no way to join the tables in such a way that verifies the "QUANTITY" for a "PHONE_ID" at a given store matches the actual amount in the store. Rather, what you can check is the TOTAL inventory for each "PHONE_ID" and even so, my numbers don't align properly. I used PL/SQL for checking and updating inventory. Thus, to the best of my ability, I tried to keep the "real" and "reported" quantity as close as possible.
+A different blunder I ran into when I was nearing the end of the project was that I should not have calculated quantity
+the way I did for each store. Having a quantity attribute is really redundant and introduces a lot of complexities with
+ensuring that this number stays in-line with the actual amount of phones that Jog has in inventory. Moreover, you
+cannot keep track of each individual phone (which store in which it's located), because there is no way to join the
+tables in such a way that verifies the "QUANTITY" for a "PHONE_ID" at a given store matches the actual amount in the
+store. Rather, what you can check is the TOTAL inventory for each "PHONE_ID" and even so, my numbers don't align
+properly. I used PL/SQL for checking and updating inventory. Thus, to the best of my ability, I tried to keep the
+"real" and "reported" quantity as close as possible.
 
 Here are some bottle-necks or choking points I realized with my current setup/code base:
-	Since billing is setup to be as realistic as possible and still provide the graders the opportunity to test many billing periods, I found billing to be very challenging. At the moment, whenever a text gets sent or received, a call gets made, or internet gets used, the "BILL" table updates. Based upon the start time of the call, the time the text was sent, or the time the internet was used, the corresponding billing period will get inserted/updated. Billing periods span from the first of the month at 00:00:00 (HH:MM:SS) until the last day of the the month at 11:59:59 (HH:MM:SS). As a result, there are some irregularities when you access Jog's cash collected or accounts receivable at different billing periods. For example, if a bill's plan is charged a fixed rate throughout the month and a text gets sent on 2014-05-02 (YYYY-MM-DD), the CEO will see an accounts receivable for that bill as ((2/31) * fixed_rate) where the 2 corresponds to the second day in the month and the 31 corresponds to the total number of days in the month, multiplied by whatever the fixed rate is. Likewise, when an account views its usage/billing information, this usage is dependent upon the last text/call/internet usage date.
+	Since billing is setup to be as realistic as possible and still provide the graders the opportunity to test many
+	billing periods, I found billing to be very challenging. At the moment, whenever a text gets sent or received, a
+	call gets made, or internet gets used, the "BILL" table updates. Based upon the start time of the call, the time
+	the text was sent, or the time the internet was used, the corresponding billing period will get inserted/updated.
+	Billing periods span from the first of the month at 00:00:00 (HH:MM:SS) until the last day of the the month at
+	11:59:59 (HH:MM:SS). As a result, there are some irregularities when you access Jog's cash collected or accounts
+	receivable at different billing periods. For example, if a bill's plan is charged a fixed rate throughout the month
+	and a text gets sent on 2014-05-02 (YYYY-MM-DD), the CEO will see an accounts receivable for that bill as
+	((2/31) * fixed_rate) where the 2 corresponds to the second day in the month and the 31 corresponds to the total
+	number of days in the month, multiplied by whatever the fixed rate is. Likewise, when an account views its
+	usage/billing information, this usage is dependent upon the last text/call/internet usage date.
 
-	At the moment, there is no way create more phone numbers, and all phone numbers in the database are permanent. Meaning, each phone number is never deleted from Jog's database. So if a customer were to leave Jog for another competitor, the phone number could never leave the company. Doing so wouldn't be a big deal to implement properly because my "on delete" attributes are setup to work just fine. However, I just didn't put the extra handling in to manage these strange scenarios. Eventually (if you create enough accounts), Jog will run out of phone numbers.
+	At the moment, there is no way create more phone numbers, and all phone numbers in the database are permanent.
+	Meaning, each phone number is never deleted from Jog's database. So if a customer were to leave Jog for another
+	competitor, the phone number could never leave the company. Doing so wouldn't be a big deal to implement properly
+	because my "on delete" attributes are setup to work just fine. However, I just didn't put the extra handling in to
+	manage these strange scenarios. Eventually (if you create enough accounts), Jog will run out of phone numbers.
 
-	Until I was about 75 percent of the way through of writing all of the SQL queries necessary to execute the transcations for the interactive and streaming interfaces, I did not use prepared statements. I completely forgot about them, and I decided it wasn't worth using them and refactoring my codebase after I had gone through the effort of writing so much code beforehand. Because I used raw queries for excecuting all of my basic queries, Professor Korth may be thinking that it'd be fun to mess with me and try injecting some SQL into my string input. Thankfully, I thought of major input sanitizing blunders such as this and as a result, I am very conservative when I take string input. At the moment, string input that contains anything but a character, number, parenthesis, underscore, dash, ampersand, or comma is considered to be invalid. This may lead to hiccups such as names that contain apostrophes, but I figured that my conservatism would more rewarding than limiting since it would reduce the likelihood of potential SQL disasters.
+	Until I was about 75 percent of the way through of writing all of the SQL queries necessary to execute the
+	transactions for the interactive and streaming interfaces, I did not use prepared statements. I completely forgot
+	about them, and I decided it wasn't worth using them and refactoring my codebase after I had gone through the
+	effort of writing so much code beforehand. Because I used raw queries for excecuting all of my basic queries,
+	Professor Korth may be thinking that it'd be fun to mess with me and try injecting some SQL into my string input.
+	Thankfully, I thought of major input sanitizing blunders such as this and as a result, I am very conservative when
+	I take string input. At the moment, string input that contains anything but a character, number, parenthesis,
+	underscore, dash, ampersand, or comma is considered to be invalid. This may lead to hiccups such as names that
+	contain apostrophes, but I figured that my conservatism would more rewarding than limiting since it would reduce
+	the likelihood of potential SQL disasters.
 
-	I never bothered using Timestamps for keeping track of time with transactions. Rather, all of my tables used the "Date" attribute whenever a date was needed. I found that there were plenty of useful functions that helped with manipulating the date and made validating it (when I had to sanitize user input) fairly straight forward and easy.
-
-	I was very liberal when it came to accepting phone numbers as input from the user or via file. As long as the phone number contains 10 digits, it'll always be flagged as good input and those 10 digits are extracted as the phone number. I thought overall it'd make for a better experience when entering phone numbers since everyone has a different preferred way of entering it. However, this does have it's downfalls. The following would be considered to be valid phone numbers:
-		7329068888
-		732-9068888
-		732-906-8888
-		(732)-906-8888
-		732asd906asd8888
-		asdasdasdasdasdasdasdasd7329068888
+	I never bothered using Timestamps for keeping track of time with transactions. Rather, all of my tables used the
+	"Date" attribute whenever a date was needed. I found that there were plenty of useful functions that helped with
+	manipulating the date and made validating it (when I had to sanitize user input) fairly straight forward and easy.
 
 Some cool things I added into the assignment:
-	The ability to make customizable plans. When using the CEO interface, one of the options is creating a plan that allows for a decent amount of creativity when it comes to the different ways you can charge a customer. For instance, you can specify your plan has a hard limit so if the user goes over the limit for texts, calls, or internet, the account's service gets suspended for the given category. Moreover, there are different ways to charge overdraft fees, and charged the account a fixed rate. Definitely try it out!
+	The ability to make customizable plans. When using the CEO interface, one of the options is creating a plan that
+	allows for a decent amount of creativity when it comes to the different ways you can charge a customer. For
+	instance, you can specify your plan has a hard limit so if the user goes over the limit for texts, calls, or
+	internet, the account's service gets suspended for the given category. Moreover, there are different ways to charge
+	overdraft fees, and charged the account a fixed rate. Definitely try it out!
 
-	The CEO interface also comes with the ability to view the details of Jog's financial information. You may simply view jog's accounts receivable or cash collected, or you may get an in-dept breakdown of it as well.
+	The CEO interface also comes with the ability to view the details of Jog's financial information. You may simply
+	view jog's accounts receivable or cash collected, or you may get an in-dept breakdown of it as well.
 	
-	You may create/add new phone models (in the CEO interface), which will be instantly added to the inventory of every Jog store.
+	You may create/add new phone models (in the CEO interface), which will be instantly added to the inventory of every
+	Jog store.
 
-	Inventory is a unique and intricate thing to craft for a database. So, to simplify things, I added the option for store managers to view their store's inventory and buy more from the online store. Upon replenishing their inventory, the online store always checks if it's balance is below zero and replenishes itself to a preset value.
+	Inventory is a unique and intricate thing to craft for a database. So, to simplify things, I added the option for
+	store managers to view their store's inventory and buy more from the online store. Upon replenishing their
+	inventory, the online store always checks if it's balance is below zero and replenishes itself to a preset value.
 
-	I used a lot of PL/SQL since it made complicated queries easier and made sitautions with multiple insertions, updates and/or deletions simpler. You'll find that some of the procedures get pretty complicated and some were "misused". Since ORACLE SQL doesn't have the ability to directly auto-increment column values, I thought it'd be clever to use PL/SQL to do it for me. So, when I add a new customer ID, I just get the "MAX" of the customer ID attribute from the customer table, put it into a variable, add one to it, and insert a new tuple with it's new values.
+	I used a lot of PL/SQL since it made complicated queries easier and made sitautions with multiple insertions,
+	updates and/or deletions simpler. You'll find that some of the procedures get pretty complicated and some were
+	"misused". Since ORACLE SQL doesn't have the ability to directly auto-increment column values, I thought it'd be
+	clever to use PL/SQL to do it for me. So, when I add a new customer ID, I just get the "MAX" of the customer ID
+	attribute from the customer table, put it into a variable, add one to it, and insert a new tuple with it's new
+	values.
 
-	My "Stream Input" interface goes fairly in-depth when it comes to outputting errors for the files. Whenever you send/receive a text, make a phone call or use the internet, basic information gets outputted to the console. However, more detailed events about what happened for each inputted file can be found in the "error.log" file and the "usage_information.log" file. Successful transactions are outputted to "usage_information.log" and failed transactions are outputted to "error.log". You can find both of these files as well as sample usage files in the "usage" folder. Lastly, you'll find a file that contains all of the phone numbers that are tied to an account. This is because if you attempt to use phones that aren't tied to an account, you'll, encounter an error (this error only occurs when the source and destination number isn't a Jog phone number for texts and calls, or the source number isn't a Jog phone number for internet usage).
+	My "Stream Input" interface goes fairly in-depth when it comes to outputting errors for the files. Whenever you
+	send/receive a text, make a phone call or use the internet, basic information gets outputted to the console.
+	However, more detailed events about what happened for each inputted file can be found in the "error.log" file and
+	the "usage_information.log" file. Successful transactions are outputted to "usage_information.log" and failed
+	transactions are outputted to "error.log". You can find both of these files as well as sample usage files in the
+	"usage" folder. Lastly, you'll find a file that contains all of the phone numbers that are tied to an account. This
+	is because if you attempt to use phones that aren't tied to an account, you'll, encounter an error (this error only
+	occurs when the source and destination number isn't a Jog phone number for texts and calls, or the source number
+	isn't a Jog phone number for internet usage).
 
 Getting Started with the Program
-	You'll find that everything necessary for the project is inside of the folder "cdc218". In this folder you will find several packages which contain my code, the "cdc218.jar" (executable) file, a "usage" folder that contains files for the "Stream Input" interface, and a Makefile. Please note, if you would like to re-compile my code, you MUST use the provided Makefile or else it won't compile. Since I used inner classes and different packages, making the code compile without the luxury of an IDE became a fairly complex challenge. As a result, in order to avoid giving you a headache and prevent me from receiving a 0 on the executable portion of the project, I ask again, please use the Makefile for re-compiling my code.
+	You'll find that everything necessary for the project is inside of the folder "cdc218". In this folder you will
+	find several packages which contain my code, the "cdc218.jar" (executable) file, a "usage" folder that contains
+	files for the "Stream Input" interface, and a Makefile. Please note, if you would like to re-compile my code, you
+	MUST use the provided Makefile or else it won't compile. Since I used inner classes and different packages, making
+	the code compile without the luxury of an IDE became a fairly complex challenge. As a result, in order to avoid
+	giving you a headache and prevent me from receiving a 0 on the executable portion of the project, I ask again,
+	please use the Makefile for re-compiling my code.
 
-	When you first run the cdc218.jar executable and enter my password, I recommend starting with the very first interactive interface (a customer walking into a store) and working your way down. They're numbered from 1 to 8, where number 8 is the "Stream Input" interface, and everything else is considered to be an "interactive" interface. 
+	When you first run the cdc218.jar executable and enter my password, I recommend starting with the very first
+	interactive interface (a customer walking into a store) and working your way down. They're numbered from 1 to 8,
+	where number 8 is the "Stream Input" interface, and everything else is considered to be an "interactive" interface.
 
 	Here are some fun customers you should consider trying out:
 		Corey Caplan - participates in multiple accounts, and is an owner for a few of them
 		Lee Caplan - Owns no accounts and participates in a few
 		Joel Caplan - He is the only owner of a corporate account
 
-	Note, certain portions of the program are split up into "residential" and "corporate" transactions. These transactions correspond to residential and corporate accounts. These two different types of accounts do not mix together, so a phone that is tied to a corporate account is not accessible in the "residential" interfaces and vice versa. I thought that Jog for Business should be a separate entity from Jog for Residents.
+	Note, certain portions of the program are split up into "residential" and "corporate" transactions. These
+	transactions correspond to residential and corporate accounts. These two different types of accounts do not mix
+	together, so a phone that is tied to a corporate account is not accessible in the "residential" interfaces and vice
+	versa. I thought that Jog for Business should be a separate entity from Jog for Residents.
 	
-	After the first interface, you might want to jump over to the seventh interface which allows you to use the account by sending/receiving texts, making phone calls, and using the internet. Then, you can go back to the first interface and view how your usage and charges have changed.
+	After the first interface, you might want to jump over to the seventh interface which allows you to use the account
+	by sending/receiving texts, making phone calls, and using the internet. Then, you can go back to the first
+	interface and view how your usage and charges have changed.
 	
-	Beyond those two recommendations, I think that you should just explore the different things that you may do and mess around with it in interesting ways. Maybe you can go to the CEO interface, create a new billing plan and phone. Then, you can back to the first interface and create a new account that uses the new plan and phone.
+	Beyond those two recommendations, I think that you should just explore the different things that you may do and
+	mess around with it in interesting ways. Maybe you can go to the CEO interface, create a new billing plan and
+	phone. Then, you can back to the first interface and create a new account that uses the new plan and phone.
 
-	I hope that you enjoy using and reviewing this project as much as I enjoyed creating it, and I'm looking forward to viewing your feedback on the assignment.
+	I hope that you enjoy using and reviewing this project as much as I enjoyed creating it, and I'm looking forward to
+	viewing your feedback on the assignment.
 
 Data Sources
-	All of my data for the entity sets was generated using generatedata.com. This website provided an easy way to populate entity sets with dummy data.
-	Some of the entity sets/relationship sets were populated using PL/SQL, but all of that code is viewable on Edgar1. Everything else was done using my interfaces in the executable portion of the project.
+	All of my data for the entity sets was generated using generatedata.com. This website provided an easy way to
+	populate entity sets with dummy data.
+	Some of the entity sets/relationship sets were populated using PL/SQL, but all of that code is viewable on Edgar1.
+	Everything else was done using my interfaces in the executable portion of the project.
 
 
 
