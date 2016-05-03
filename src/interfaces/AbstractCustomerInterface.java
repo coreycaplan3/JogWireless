@@ -49,11 +49,12 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         while (true) {
             String prompt;
             if (isResidential()) {
-                prompt = "Please enter your name or -q to return:";
+                prompt = "Please enter your name (which is case sensitive) or -q to return:";
             } else {
-                prompt = "Please enter the name of a person on the business\'s account or -q to return:";
+                prompt = "Please enter the name of a person on the business\'s account (which is case sensitive) " +
+                        "or -q to return:";
             }
-            String name = FormValidation.getStringInput(prompt, "name", 250);
+            String name = FormValidation.getStringInput(prompt, "name", 50);
             if (name.equals("-q")) {
                 return null;
             }
@@ -106,13 +107,13 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             } else {
                 prompt = "Please enter the name of the owner of the business\'s account:";
             }
-            customerName = FormValidation.getStringInput(prompt, "name", 100000);
+            customerName = FormValidation.getStringInput(prompt, "name", 50);
             if (isResidential()) {
                 prompt = "Please enter your address:";
             } else {
                 prompt = "Please enter the address of your business:";
             }
-            address = FormValidation.getStringInput(prompt, "address", 250);
+            address = FormValidation.getStringInput(prompt, "address", 50);
         } else {
             this.customerId = customerId;
             customerName = customerDatabase.getNameFromCustomerId(Integer.parseInt(customerId));
@@ -132,7 +133,6 @@ abstract class AbstractCustomerInterface extends BaseInterface {
     }
 
     void performUpgradePhone(String customerId, int storeNumber) {
-        System.out.println("Here are the different models from which you may choose:");
         Object[][] phonesForSale = customerDatabase.getPhoneModelsForSale(storeNumber);
         while (true) {
             int response = FormValidation.getIntegerInput("Please enter the Phone ID of the phone you would like " +
@@ -144,6 +144,13 @@ abstract class AbstractCustomerInterface extends BaseInterface {
                     response = FormValidation.getIntegerInput("Please select which of your phones you would like to " +
                             "upgrade:", 100000);
                     if (customerDatabase.doesUserOwnPhone(response, userPhones)) {
+                        System.out.println("Are you sure you would like to upgrade your phone?");
+                        boolean shouldContinue = FormValidation.getTrueOrFalse();
+                        if (!shouldContinue) {
+                            System.out.println("Returning to the menu...");
+                            System.out.println();
+                            return;
+                        }
                         long oldMeid = (long) userPhones[response - 1][0];
                         long phoneNumber = (long) userPhones[response - 1][3];
                         customerDatabase.replaceNewPhone(phoneToBuy, customerId, oldMeid, phoneNumber,
@@ -158,14 +165,107 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         }
     }
 
+    void changeBasicInformation() {
+        System.out.println("********************** Change Basic Information **********************");
+        System.out.printf("%-45s %d\n", "Change your name on your accounts", 1);
+        System.out.printf("%-45s %d\n", "Change your address on your accounts", 2);
+        System.out.printf("%-45s %d\n", "Return to the main menu", -1);
+        System.out.println("**********************************************************************");
+        while (true) {
+            int choice = FormValidation.getIntegerInput("Please select an option:", 5);
+            if (choice == -1) {
+                return;
+            } else if (choice == 2) {
+                changeName();
+                return;
+            } else if (choice == 3) {
+                changeAddress();
+                return;
+            } else {
+                System.out.println("Please enter a valid option.");
+            }
+        }
+    }
+
+    private void changeName() {
+        String newName = FormValidation.getStringInput("Please enter your new name:", "name", 50);
+        System.out.println("Are you sure you would like to change your name?");
+        boolean shouldContinue = FormValidation.getTrueOrFalse();
+        if (!shouldContinue) {
+            System.out.println("Name change discarded.");
+        } else {
+            customerDatabase.changeCustomerName(customerId, newName);
+        }
+        System.out.println("Returning to the main menu...");
+        System.out.println();
+    }
+
+    private void changeAddress() {
+        String newAddress = FormValidation.getStringInput("Please enter your new address:", "address", 50);
+        System.out.println("Are you sure you would like to change your address?");
+        boolean shouldContinue = FormValidation.getTrueOrFalse();
+        if (!shouldContinue) {
+            System.out.println("Address change discarded.");
+        } else {
+            customerDatabase.changeCustomerAddress(customerId, newAddress);
+        }
+        System.out.println("Returning to the main menu...");
+        System.out.println();
+    }
+
+    void viewCustomerPhones() {
+        customerDatabase.viewCustomersPhones(customerId, isResidential());
+        System.out.println("Returning to the main menu...");
+        System.out.println();
+    }
+
+    void viewAccountInformation(String accountId) {
+        while (true) {
+            System.out.println("********************** View Account Information **********************");
+            System.out.printf("%-45s %d\n", "View customers on your account", 1);
+            System.out.printf("%-45s %d\n", "View all of the phones on your account", 2);
+            System.out.printf("%-45s %d\n", "View your current billing plan", 3);
+            System.out.printf("%-45s %d\n", "View your usage for a given billing period", 4);
+            System.out.printf("%-45s %d\n", "View customers on your account", -1);
+            System.out.println("**********************************************************************");
+            while (true) {
+                int choice = FormValidation.getIntegerInput("Please select an option:", 5);
+                if (choice == 1) {
+                    customerDatabase.viewCustomersOnAccount(accountId);
+                    System.out.println();
+                    break;
+                } else if (choice == 2) {
+                    customerDatabase.viewPhonesOnAccount(accountId);
+                    System.out.println();
+                    break;
+                } else if (choice == 3) {
+                    String billingPeriod = FormValidation.getBillingPeriod("Please enter the billing period for which " +
+                            "you would like to view your account\'s usage:");
+                    customerDatabase.getUsageInformation(accountId, billingPeriod);
+                    System.out.println();
+                    break;
+                } else if (choice == 4) {
+                    customerDatabase.viewCurrentPlan(accountId);
+                    System.out.println();
+                    break;
+                } else if (choice == -1) {
+                    return;
+                } else {
+                    System.out.println("Please enter a valid option.");
+                }
+            }
+        }
+    }
+
     void performReportPhone(String customerId) {
-        System.out.println("Please select one of these options:");
+        System.out.println("*************************** Report A Phone ***************************");
         System.out.printf("%-35s %d\n", "My phone is lost!", 1);
         System.out.printf("%-35s %d\n", "My phone got stolen!", 2);
         System.out.printf("%-35s %d\n", "I found my phone!", 3);
         System.out.printf("%-35s %d\n", "Go back to the selection screen", -1);
+        System.out.println("**********************************************************************");
         while (true) {
-            int response = FormValidation.getIntegerInput("", 5);
+            int response = FormValidation.getIntegerInput("Please select an option:", 5);
             if (response == -1) {
                 return;
             } else if (response < 1 || response > 3) {
@@ -252,11 +352,11 @@ abstract class AbstractCustomerInterface extends BaseInterface {
     void addCustomerToAccount(String accountId, int storeNumber) {
         System.out.println();
         String name = FormValidation.getStringInput("Enter the name of the new person you would like to add " +
-                "to your account, or enter -s to search from our existing customer base: ", "name", 250);
+                "to your account, or enter -s to search from our existing customer base: ", "name", 50);
         if (name.equals("-s")) {
             while (true) {
                 name = FormValidation.getStringInput("Please enter the name of the customer you would like " +
-                        "to find:", "name", 250);
+                        "to find:", "name", 50);
                 Object[][] customerIdList = customerDatabase.getCustomerIdsForName(name);
                 if (customerIdList != null) {
                     while (true) {
@@ -281,8 +381,15 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             }
         } else {
             String address = FormValidation.getStringInput("Please enter the person\'s address:", "address",
-                    250);
+                    50);
             int desiredPhone = getNewPhone(storeNumber);
+            System.out.println("Would you like to add this person to your account?");
+            boolean shouldContinue = FormValidation.getTrueOrFalse();
+            if (!shouldContinue) {
+                System.out.println("Returning to the menu...");
+                System.out.println();
+                return;
+            }
             customerDatabase.addCustomerToAccount("-1", name, address, desiredPhone, accountId, storeNumber);
             System.out.println("Returning to the home screen...");
             System.out.println();
@@ -314,6 +421,13 @@ abstract class AbstractCustomerInterface extends BaseInterface {
      */
     void changeAccountPlan(String accountId) {
         int desiredPlan = getPhonePlanForAccount("Here are the plans to which you may switch:");
+        System.out.println("Are you sure you want to switch your plan?");
+        boolean shouldContinue = FormValidation.getTrueOrFalse();
+        if (!shouldContinue) {
+            System.out.println("Returning to the menu...");
+            System.out.println();
+            return;
+        }
         if (isResidential()) {
             customerDatabase.changePlan(desiredPlan, accountId);
         } else {
@@ -339,13 +453,9 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         System.out.println(prompt);
         System.out.println();
         String[][] phonePlans = customerDatabase.getAvailablePlans(isResidential());
-        //Gets the length of the number of rows. For example, if the number of plans is 10, length is 2.
-        int length = (phonePlans.length + "").length();
-        length = Math.min(length, 6);
-        System.out.printf("%-130s %-" + length + "s", "Plan", "Option\n");
         for (int i = 0; i < phonePlans.length; i++) {
-            System.out.printf("%s\n", phonePlans[i][1]);
-            System.out.printf("%" + 134 + "s\n", (i + 1));
+            System.out.println((i + 1) + ":");
+            System.out.println(phonePlans[i][1]);
             System.out.println();
         }
         return getValidPhonePlan(phonePlans);
@@ -386,7 +496,12 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         System.out.println("Here are your unpaid bills:");
         while (true) {
             int billToPay = FormValidation.getIntegerInput("Please enter the bill ID of the bill you would like to " +
-                    "pay.", 1000000);
+                    "pay or -1 to return.", 1000000);
+            if (billToPay == -1) {
+                System.out.println("Returning to the menu...");
+                System.out.println();
+                return;
+            }
             for (Object[] unpaidBill : unpaidBills) {
                 if ((Integer) unpaidBill[0] == billToPay) {
                     customerDatabase.payBill((int) unpaidBill[0]);

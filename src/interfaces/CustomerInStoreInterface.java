@@ -1,7 +1,6 @@
 package interfaces;
 
 import database.CustomerDatabase;
-import org.omg.CORBA.INTERNAL;
 import validation.FormValidation;
 
 import java.util.TreeMap;
@@ -35,7 +34,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 //Indicates the user created an account successfully.
                 System.out.println("Now that you created an account, you may search for yourself in our system.");
                 getCustomerNameAndId();
-                if(Integer.parseInt(getCustomerId()) == -1) {
+                if (Integer.parseInt(getCustomerId()) == -1) {
                     System.out.println("Well, we can\'t perform any transactions without an account and your information.");
                     System.out.println("Returning to the interface screen...");
                     System.out.println();
@@ -46,20 +45,23 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
         System.out.println("Welcome " + getCustomerName() + ", you look great today!");
         System.out.println();
         while (true) {
-            System.out.println("*************** JOG WIRELESS: STORE " + storeNumber + " **************");
-            System.out.printf("%-45s %d\n", "Open a new account up with Jog:", 1);
-            System.out.printf("%-45s %d\n", "Upgrade your phone and trade in the old one:", 2);
-            System.out.printf("%-45s %d\n", "Report your phone as lost, stolen, or found:", 3);
-            System.out.printf("%-45s %d\n", "Add a person to your account:", 4);
-            System.out.printf("%-45s %d\n", "Change your account\'s plan:", 5);
-            System.out.printf("%-45s %d\n", "View your account\'s billing information", 6);
-            System.out.printf("%-45s %d\n", "Pay one of your account\'s bills", 7);
+            System.out.println("*************• JOG WIRELESS: STORE " + storeNumber + " **********************************");
+            System.out.printf("%-45s %d\n", "Open a new account up with Jog", 1);
+            System.out.printf("%-45s %d\n", "View all of the phones you own", 2);
+            System.out.printf("%-45s %d\n", "Upgrade your phone and trade in the old one", 3);
+            System.out.printf("%-45s %d\n", "Report your phone as lost, stolen, or found", 4);
+            System.out.printf("%-45s %d\n", "View basic information about your account", 5);
+            System.out.printf("%-45s %d\n", "Add a person to your account", 6);
+            System.out.printf("%-45s %d\n", "Change your account\'s plan", 7);
+            System.out.printf("%-45s %d\n", "View your account\'s billing information", 8);
+            System.out.printf("%-45s %d\n", "Pay one of your account\'s bills", 9);
+            System.out.printf("%-45s %d\n", "Change your basic information", 10);
             System.out.printf("%-45s %d\n", "Go back to the interface screen", -1);
-            System.out.println("**************************************************");
-            int response = FormValidation.getIntegerInput("Select an option:", 10);
+            System.out.println("**********************************************************************");
+            int response = FormValidation.getIntegerInput("Select an option:", 11);
             if (response == -1) {
                 return true;
-            } else if (response < 1 || response > 7) {
+            } else if (response < 1 || response > 10) {
                 System.out.println("Please enter a valid choice!");
             } else {
                 getChoice(response);
@@ -74,9 +76,10 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
     private void getCustomerNameAndId() {
         String name;
         setCustomerId("-1");
+        System.out.println("To get started, we\'re going to need your information.");
         while (true) {
-            name = FormValidation.getStringInput("Please enter your name, -a to open an account, or -q to quit:",
-                    "name", 250);
+            name = FormValidation.getStringInput("Please enter your name (which is case sensitive), -a to open an " +
+                    "account, or -q to quit:", "name", 50);
             if (name.equals("-q")) {
                 return;
             } else if (name.equals("-a")) {
@@ -154,12 +157,25 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 System.out.println();
                 break;
             case 2:
-                performUpgradePhone(getCustomerId(), storeNumber);
+                viewCustomerPhones();
                 break;
             case 3:
-                performReportPhone(getCustomerId());
+                performUpgradePhone(getCustomerId(), storeNumber);
                 break;
             case 4:
+                performReportPhone(getCustomerId());
+                break;
+            case 5:
+                accountId = getAccountIdFromCustomerId(getCustomerId());
+                if (accountId == null) {
+                    System.out.println("You must be the owner of a residential account to view account information!");
+                    System.out.println("Returning to the selection screen...");
+                    System.out.println();
+                    return;
+                }
+                viewAccountInformation(accountId);
+                break;
+            case 6:
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of an account to add a customer to an account!");
@@ -169,7 +185,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 }
                 addCustomerToAccount(accountId, storeNumber);
                 break;
-            case 5:
+            case 7:
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a residential account to change an account\'s plan!");
@@ -179,7 +195,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 }
                 changeAccountPlan(accountId);
                 break;
-            case 6:
+            case 8:
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a residential account to see billing information!");
@@ -189,7 +205,7 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                 }
                 performShowBilling(accountId);
                 break;
-            case 7:
+            case 9:
                 accountId = getAccountIdFromCustomerId(getCustomerId());
                 if (accountId == null) {
                     System.out.println("You must be the owner of a residential account to pay a bill!");
@@ -198,6 +214,9 @@ public class CustomerInStoreInterface extends AbstractCustomerInterface {
                     return;
                 }
                 payBill(accountId);
+                break;
+            case 10:
+                changeBasicInformation();
                 break;
             default:
                 throw new IllegalArgumentException("Invalid choice entered. Found " + choice);

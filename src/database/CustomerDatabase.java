@@ -3,7 +3,6 @@ package database;
 import database.TableConstants.Bill;
 import database.TableConstants.PhoneModel;
 import database.TableConstants.Plans;
-import sun.reflect.generics.tree.Tree;
 
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -13,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 
+import static database.ColumnTypes.*;
 import static database.TableConstants.*;
 
 /**
@@ -27,6 +27,217 @@ public class CustomerDatabase {
 
     public CustomerDatabase() {
         databaseApi = DatabaseApi.getInstance();
+    }
+
+    public void changeCustomerName(String customerId, String newName) {
+        String query = "UPDATE CUSTOMER " +
+                "SET NAME = \'" + newName + "\' " +
+                "where C_ID = " + customerId;
+        try {
+            databaseApi.executeQuery(query);
+            System.out.println("Your name has been changed successfully!");
+        } catch (SQLException e) {
+            System.out.println("There was an error changing your name.");
+        } finally {
+            databaseApi.logout();
+        }
+    }
+
+    public void changeCustomerAddress(String customerId, String newAddress) {
+        String query = "UPDATE CUSTOMER " +
+                "SET ADDRESS = \'" + newAddress + "\' " +
+                "where C_ID = " + customerId;
+        try {
+            databaseApi.executeQuery(query);
+            System.out.println("Your address has been changed successfully!");
+        } catch (SQLException e) {
+            System.out.println("There was an error changing your address.");
+        } finally {
+            databaseApi.logout();
+        }
+    }
+
+    public void viewCurrentPlan(String accountId) {
+        try {
+            String query = "SELECT\n" +
+                    "  P_NAME,\n" +
+                    "  HARD_LIMIT,\n" +
+                    "  LIMIT_TEXTS,\n" +
+                    "  LIMIT_CALLS_SECONDS,\n" +
+                    "  LIMIT_INTERNET_MB,\n" +
+                    "  RATE_TEXTS,\n" +
+                    "  RATE_CALLS_SECONDS,\n" +
+                    "  RATE_INTERNET_MB,\n" +
+                    "  OVERDRAFT_RATE_TEXTS,\n" +
+                    "  OVERDRAFT_RATE_CALLS_SECONDS,\n" +
+                    "  OVERDRAFT_RATE_INTERNET_MB,\n" +
+                    "  BASE_RATE\n" +
+                    "FROM account\n" +
+                    "  JOIN plans ON ACCOUNT.CURRENT_PLAN = PLANS.PLAN_ID\n" +
+                    "WHERE A_ID = " + accountId;
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            resultSet.next();
+            String planName = resultSet.getString(Plans.P_NAME);
+            int hardLimit = resultSet.getInt(Plans.HARD_LIMIT);
+            int limitTexts = resultSet.getInt(Plans.LIMIT_TEXTS);
+            int limitCallsSeconds = resultSet.getInt(Plans.LIMIT_CALLS_SECONDS);
+            int limitInternetMegabytes = resultSet.getInt(Plans.LIMIT_INTERNET_MB);
+            double rateTexts = resultSet.getDouble(Plans.RATE_TEXTS);
+            double rateCallsSeconds = resultSet.getDouble(Plans.RATE_CALLS_SECONDS);
+            double rateInternet = resultSet.getDouble(Plans.RATE_INTERNET_MB);
+            double overdraftRateTexts = resultSet.getDouble(Plans.OVERDRAFT_RATE_TEXTS);
+            double overdraftRateCalls = resultSet.getDouble(Plans.OVERDRAFT_RATE_CALLS_SECONDS);
+            double overdraftRateInternet = resultSet.getDouble(Plans.OVERDRAFT_RATE_INTERNET_MB);
+            double baseRate = resultSet.getDouble(Plans.BASE_RATE);
+
+            PlanParser planParser = new PlanParser(planName, hardLimit, limitTexts, limitCallsSeconds / 60,
+                    limitInternetMegabytes / 1024, rateTexts, rateCallsSeconds * 60, rateInternet * 1024,
+                    overdraftRateTexts, overdraftRateCalls * 60, overdraftRateInternet * 1024, baseRate);
+            System.out.println("Here is your current billing plan:");
+            System.out.println(planParser.parse());
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } finally {
+            databaseApi.logout();
+        }
+    }
+
+    public void viewCustomersOnAccount(String accountId) {
+        String query = "SELECT\n" +
+                "  NAME,\n" +
+                "  ADDRESS,\n" +
+                "  PHONE_NUMBER\n" +
+                "FROM CUSTOMER\n" +
+                "  NATURAL JOIN SUBSCRIBES\n" +
+                "  NATURAL JOIN ACCOUNT\n" +
+                "WHERE A_ID = " + accountId;
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            ArrayList<String> columnNames = ResultSetHelper.makeColumnNames("NAME", "ADDRESS", "PHONE_NUMBER");
+            ArrayList<ColumnTypes> columnTypes = ResultSetHelper.makeColumnTypes(STRING, STRING, LONG);
+            ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
+            System.out.println("Here are the customers on your account:");
+            resultSetHelper.printResults(100);
+        } catch (SQLException e) {
+            System.out.println("There was an error viewing the customers on your account.");
+        }
+    }
+
+    public void viewCustomersPhones(String customerId, boolean isResidential) {
+        String query = "SELECT\n" +
+                "  PHONE_NUMBER,\n" +
+                "  MODEL,\n" +
+                "  MANUFACTURER,\n" +
+                "  P_STATUS\n" +
+                "FROM SERVICE\n" +
+                "  NATURAL JOIN SUBSCRIBES\n" +
+                "  NATURAL JOIN USED_BY\n" +
+                "  NATURAL JOIN PHONE_PRODUCT\n" +
+                "  NATURAL JOIN PHONE_MODEL\n" +
+                "  NATURAL JOIN ACCOUNT\n" +
+                "  JOIN PLANS ON ACCOUNT.CURRENT_PLAN = PLANS.PLAN_ID\n" +
+                "where C_ID = " + customerId + "\n" +
+                "AND IS_RESIDENTIAL = " + (isResidential ? 1 : 0);
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            if(isResidential) {
+                System.out.println("Here are the residential phones that you own:");
+            } else {
+                System.out.println("Here are the corporate phones that you own:");
+            }
+            ArrayList<String> columnNames = ResultSetHelper.makeColumnNames(Service.PHONE_NUMBER, PhoneModel.MODEL,
+                    PhoneModel.MANUFACTURER, PhoneProduct.P_STATUS);
+            ArrayList<ColumnTypes> columnTypes = ResultSetHelper.makeColumnTypes(Service.PHONE_NUMBER_TYPE,
+                    PhoneModel.MODEL_TYPE, PhoneModel.MANUFACTURER_TYPE, PhoneProduct.P_STATUS_TYPE);
+            ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
+            resultSetHelper.printResults(30);
+        } catch (SQLException e) {
+            System.out.println("There was an error retrieving your phones!");
+        }
+    }
+
+    public void getUsageInformation(String accountId, String billingPeriod) {
+        String query1 = "SELECT count(TEXT_ID) AS TOTAL_TEXTS\n" +
+                "FROM TEXT_LOG\n" +
+                "WHERE (extract(MONTH FROM TIME_SENT) = extract(MONTH FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\'))\n" +
+                "       AND extract(YEAR FROM TIME_SENT) = extract(YEAR FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\')))\n" +
+                "      AND (SOURCE_PHONE IN (SELECT PHONE_NUMBER\n" +
+                "                            FROM SUBSCRIBES\n" +
+                "                            WHERE A_ID = " + accountId + ")\n" +
+                "           OR DEST_PHONE IN (SELECT PHONE_NUMBER\n" +
+                "                             FROM SUBSCRIBES\n" +
+                "                             WHERE A_ID = " + accountId + ")\n" +
+                "      )";
+
+        String query2 = "SELECT sum((END_TIME - START_TIME) * 60 * 24) AS TOTAL_MINUTES\n" +
+                "FROM CALL_LOG\n" +
+                "WHERE (extract(MONTH FROM START_TIME) = extract(MONTH FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\'))\n" +
+                "       AND extract(YEAR FROM START_TIME) = extract(YEAR FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\')))\n" +
+                "      AND (SOURCE_PHONE IN (SELECT PHONE_NUMBER\n" +
+                "                            FROM SUBSCRIBES\n" +
+                "                            WHERE A_ID = " + accountId + ")\n" +
+                "           OR DEST_PHONE IN (SELECT PHONE_NUMBER\n" +
+                "                             FROM SUBSCRIBES\n" +
+                "                             WHERE A_ID = " + accountId + ")\n" +
+                "      )";
+        String query3 = "SELECT decode(sum(AMOUNT_MEGABYTES), NULL, 0, (sum(AMOUNT_MEGABYTES) / 1024)) " +
+                "AS TOTAL_GIGABYTES\n" +
+                "FROM INTERNET_USAGE\n" +
+                "WHERE (extract(MONTH FROM USAGE_DATE) = extract(MONTH FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\'))\n" +
+                "       AND extract(YEAR FROM USAGE_DATE) = extract(YEAR FROM to_date(\'" + billingPeriod + "\', " +
+                "\'yyyy-MM-dd HH24:mi:ss\')))\n" +
+                "      AND (SOURCE_PHONE IN (SELECT PHONE_NUMBER\n" +
+                "                            FROM SUBSCRIBES\n" +
+                "                            WHERE A_ID = " + accountId + ")\n" +
+                "      )";
+        ArrayList<String> columnNames = ResultSetHelper.makeColumnNames("TOTAL_TEXTS", "TOTAL_MINUTES",
+                "TOTAL_GIGABYTES");
+        try {
+            ResultSet resultSet1 = databaseApi.executeQuery(query1);
+            ResultSet resultSet2 = databaseApi.executeQuery(query2);
+            ResultSet resultSet3 = databaseApi.executeQuery(query3);
+            resultSet1.next();
+            resultSet2.next();
+            resultSet3.next();
+            System.out.println("Here is the total usage information for the billing period you entered:");
+            System.out.printf("%-30s %-30s %-30s\n", columnNames.get(0), columnNames.get(1), columnNames.get(2));
+            System.out.printf("%-30d %-30.2f %-30.2f\n", resultSet1.getInt(1), resultSet2.getDouble(1),
+                    resultSet3.getDouble(1));
+        } catch (SQLException e) {
+            System.out.println("There was an error retrieving your usage information.");
+        }
+
+    }
+
+    public void viewPhonesOnAccount(String accountId) {
+        String query = "SELECT\n" +
+                "  PHONE_NUMBER,\n" +
+                "  MODEL,\n" +
+                "  MANUFACTURER,\n" +
+                "  P_STATUS\n" +
+                "FROM SERVICE\n" +
+                "  NATURAL JOIN SUBSCRIBES\n" +
+                "  NATURAL JOIN USED_BY\n" +
+                "  NATURAL JOIN PHONE_PRODUCT\n" +
+                "  NATURAL JOIN PHONE_MODEL\n" +
+                "where A_ID = " + accountId;
+        try {
+            ResultSet resultSet = databaseApi.executeQuery(query);
+            ArrayList<String> columnNames = ResultSetHelper.makeColumnNames(Service.PHONE_NUMBER, PhoneModel.MODEL,
+                    PhoneModel.MANUFACTURER, PhoneProduct.P_STATUS);
+            ArrayList<ColumnTypes> columnTypes = ResultSetHelper.makeColumnTypes(Service.PHONE_NUMBER_TYPE,
+                    PhoneModel.MODEL_TYPE, PhoneModel.MANUFACTURER_TYPE, PhoneProduct.P_STATUS_TYPE);
+            ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
+            System.out.println("Here are the phones on your account:");
+            resultSetHelper.printResults(30);
+        } catch (SQLException e) {
+            System.out.println("There was an error viewing the phones on your account.");
+        }
     }
 
     /**
@@ -56,7 +267,7 @@ public class CustomerDatabase {
                 } else {
                     isPaid = "False";
                 }
-                System.out.printf("%-15s %-20s %-15s %-50s $%.2f\n", resultSet.getInt(Bill.A_ID), formattedDate, isPaid,
+                System.out.printf("%-15s %-20s %-15s %-30s $%.2f\n", resultSet.getInt(Bill.A_ID), formattedDate, isPaid,
                         resultSet.getString(Plans.P_NAME), resultSet.getDouble(Bill.ACCUMULATED_CHARGES));
                 System.out.println();
             }
@@ -375,7 +586,7 @@ public class CustomerDatabase {
 
                 ResultSetHelper helper = new ResultSetHelper(resultSet, columnNames, columnTypes);
 
-                return helper.printResultsWithOptions(25);
+                return helper.printResultsWithOptions(30);
             } else {
                 return null;
             }
@@ -488,7 +699,8 @@ public class CustomerDatabase {
     public Object[][] getPhoneModelsForSale(int storeNumber) {
         try {
             String query = "SELECT PHONE_ID, MANUFACTURER, MODEL FROM STOCKS NATURAL JOIN PHONE_MODEL WHERE QUANTITY " +
-                    "> 0 AND STORE_NUMBER = " + storeNumber;
+                    "> 0 AND STORE_NUMBER = " + storeNumber + "\n" +
+                    "ORDER BY PHONE_ID ASC";
             ResultSet resultSet = databaseApi.executeQuery(query);
 
             List<ColumnTypes> columnTypes = new ArrayList<>();
@@ -504,13 +716,15 @@ public class CustomerDatabase {
             if (!ResultSetHelper.isResultSetValid(resultSet, "We currently have no phones in stock at store number " +
                     storeNumber + ". Instead, we will ship you your phone from our warehouse.")) {
                 query = "SELECT PHONE_ID, MANUFACTURER, MODEL FROM STOCKS NATURAL JOIN PHONE_MODEL WHERE QUANTITY " +
-                        "> 0 AND STORE_NUMBER = 1";
+                        "> 0 AND STORE_NUMBER = 1\n" +
+                        "ORDER BY PHONE_ID ASC";
                 resultSet = databaseApi.executeQuery(query);
+            } else {
+                System.out.println("Here are the phones that are in stock and available for sale:");
             }
 
-            System.out.println("Here are the phones that are in stock and available for sale:");
             ResultSetHelper helper = new ResultSetHelper(resultSet, columnNames, columnTypes);
-            return helper.printResults(20);
+            return helper.printResults(30);
         } catch (SQLException e) {
             System.out.println("Unknown error getting phone models!");
             return null;

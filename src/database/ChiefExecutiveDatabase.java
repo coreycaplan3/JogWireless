@@ -88,8 +88,8 @@ public class ChiefExecutiveDatabase {
 
             ArrayList<String> columnNames = new ArrayList<>();
             columnNames.add(Bill.A_ID);
+            columnNames.add(Bill.BILL_PERIOD);
             columnNames.add(pastDue);
-            columnNames.add(Bill.ACCUMULATED_CHARGES);
 
             ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
             resultSetHelper.printResults(20);
