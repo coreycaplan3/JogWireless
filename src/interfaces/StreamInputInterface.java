@@ -392,14 +392,14 @@ public class StreamInputInterface extends BaseInterface {
             return UsageType.TYPE_INVALID_DATE;
         }
 
-        if (!isInternetBytesValid(tokens[3])) {
+        if (!isMegabytesValid(tokens[3])) {
             return UsageType.TYPE_INVALID_FORMAT;
         }
 
         return UsageType.TYPE_INTERNET;
     }
 
-    private boolean isInternetBytesValid(String rawMegabytes) {
+    private boolean isMegabytesValid(String rawMegabytes) {
         if (rawMegabytes == null || rawMegabytes.length() < 2) {
             return false;
         }
