@@ -59,6 +59,13 @@ Here are some bottle-necks or choking points I realized with my current setup/co
 	"Date" attribute whenever a date was needed. I found that there were plenty of useful functions that helped with
 	manipulating the date and made validating it (when I had to sanitize user input) fairly straight forward and easy.
 
+	When you go over your monthly limit for texts, calls, or internet usage, it was hard to distinguish between a large
+	usage going over the limit or barely going over the limit. So, for example, if it's the first day of the month and
+	you decide to use 3 gigabytes with a 2 gigabyte limit, then the error message will print out "You cannot use
+	anymore data for the month. You reached your monthly limit!" Technically, this isn't correct though because the
+	account really has all 2 gigabytes left. So, keep that in mind if you try to use a large amount of data at once in
+	the beginning of the billing period.
+
 Some cool things I added into the assignment:
 	The ability to make customizable plans. When using the CEO interface, one of the options is creating a plan that
 	allows for a decent amount of creativity when it comes to the different ways you can charge a customer. For

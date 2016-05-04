@@ -54,7 +54,8 @@ public class SalesClerkDatabase {
                 "FROM STOCKS\n" +
                 "NATURAL JOIN PHONE_MODEL\n" +
                 "WHERE STORE_NUMBER = " + storeNumber + "\n" +
-                "      AND PHONE_ID = " + phoneId;
+                "      AND PHONE_ID = " + phoneId + "\n" +
+                "ORDER BY PHONE_ID ASC";
         try {
 
             ResultSet resultSet = databaseApi.executeQuery(query);

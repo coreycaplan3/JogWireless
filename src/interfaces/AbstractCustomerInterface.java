@@ -174,6 +174,8 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         while (true) {
             int choice = FormValidation.getIntegerInput("Please select an option:", 5);
             if (choice == -1) {
+                System.out.println("Returning to the main menu...");
+                System.out.println();
                 return;
             } else if (choice == 2) {
                 changeName();
@@ -226,7 +228,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
             System.out.printf("%-45s %d\n", "View all of the phones on your account", 2);
             System.out.printf("%-45s %d\n", "View your current billing plan", 3);
             System.out.printf("%-45s %d\n", "View your usage for a given billing period", 4);
-            System.out.printf("%-45s %d\n", "View customers on your account", -1);
+            System.out.printf("%-45s %d\n", "Return to the main menu", -1);
             System.out.println("**********************************************************************");
             while (true) {
                 int choice = FormValidation.getIntegerInput("Please select an option:", 5);
@@ -239,16 +241,18 @@ abstract class AbstractCustomerInterface extends BaseInterface {
                     System.out.println();
                     break;
                 } else if (choice == 3) {
-                    String billingPeriod = FormValidation.getBillingPeriod("Please enter the billing period for which " +
-                            "you would like to view your account\'s usage:");
-                    customerDatabase.getUsageInformation(accountId, billingPeriod);
-                    System.out.println();
-                    break;
-                } else if (choice == 4) {
                     customerDatabase.viewCurrentPlan(accountId);
                     System.out.println();
                     break;
+                } else if (choice == 4) {
+                    String billingPeriod = FormValidation.getBillingPeriod("Please enter the billing period for " +
+                            "which you would like to view your account\'s usage:");
+                    customerDatabase.getUsageInformation(accountId, billingPeriod);
+                    System.out.println();
+                    break;
                 } else if (choice == -1) {
+                    System.out.println("Returning to the main menu...");
+                    System.out.println();
                     return;
                 } else {
                     System.out.println("Please enter a valid option.");
@@ -262,7 +266,7 @@ abstract class AbstractCustomerInterface extends BaseInterface {
         System.out.printf("%-35s %d\n", "My phone is lost!", 1);
         System.out.printf("%-35s %d\n", "My phone got stolen!", 2);
         System.out.printf("%-35s %d\n", "I found my phone!", 3);
-        System.out.printf("%-35s %d\n", "Go back to the selection screen", -1);
+        System.out.printf("%-35s %d\n", "Return to the main menu", -1);
         System.out.println("**********************************************************************");
         while (true) {
             int response = FormValidation.getIntegerInput("Please select an option:", 5);

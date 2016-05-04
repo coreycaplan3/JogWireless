@@ -27,8 +27,8 @@ public class StreamInputInterface extends BaseInterface {
     private enum UsageType {
         TYPE_TEXT, TYPE_CALL, TYPE_INTERNET, TYPE_COMMENT, TYPE_UNKNOWN_USAGE, TYPE_INVALID_FORMAT, TYPE_INVALID_DATE,
         TYPE_INVALID_PHONE, TYPE_NO_ACCOUNT, TYPE_NO_SERVICE, TYPE_UNKNOWN_SQL_ERROR, TYPE_SOURCE_AND_DEST_SAME,
-        TYPE_END_BEFORE_START, TYPE_TOO_MANY_BYTES, TYPE_TOO_MANY_MEGABYTES, TYPE_PHONE_CALL_TOO_LONG,
-        TYPE_TOO_FEW_BYTES, TYPE_TOO_FEW_MEGABYTES
+        TYPE_END_BEFORE_START, TYPE_TOO_MANY_BYTES, TYPE_TOO_MANY_MEGABYTES, TYPE_TOO_FEW_BYTES, TYPE_TOO_FEW_MEGABYTES,
+        TYPE_INVALID_BYTES, TYPE_INVALID_MEGABYTES
     }
 
     public StreamInputInterface() {
@@ -185,6 +185,18 @@ public class StreamInputInterface extends BaseInterface {
             errorType = "<SOURCE AND DESTINATION THE SAME>";
         } else if (UsageType.TYPE_END_BEFORE_START == typeOfError) {
             errorType = "<END TIME BEFORE START TIME>";
+        } else if (UsageType.TYPE_INVALID_BYTES == typeOfError) {
+            errorType = "<INVALID BYTES SPECIFIED>";
+        } else if (UsageType.TYPE_TOO_FEW_BYTES == typeOfError) {
+            errorType = "<TOO FEW BYTES SPECIFIED>";
+        } else if (UsageType.TYPE_TOO_MANY_BYTES == typeOfError) {
+            errorType = "<TOO MANY BYTES SPECIFIED>";
+        } else if (UsageType.TYPE_INVALID_MEGABYTES == typeOfError) {
+            errorType = "<INVALID MEGABYTES SPECIFIED>";
+        } else if (UsageType.TYPE_TOO_FEW_MEGABYTES == typeOfError) {
+            errorType = "<TOO FEW MEGABYTES SPECIFIED>";
+        } else if (UsageType.TYPE_TOO_MANY_MEGABYTES == typeOfError) {
+            errorType = "<TOO MANY MEGABYTES SPECIFIED>";
         } else {
             errorType = "<UNKNOWN ERROR>";
         }
@@ -257,28 +269,34 @@ public class StreamInputInterface extends BaseInterface {
             return UsageType.TYPE_INVALID_DATE;
         }
 
-        if (!isBytesValid(tokens[4])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+        UsageType usageType = isBytesValid(tokens[4]);
+        if (usageType != null) {
+            return usageType;
         }
         return UsageType.TYPE_TEXT;
     }
 
-    private boolean isBytesValid(String rawBytes) {
+    private UsageType isBytesValid(String rawBytes) {
         if (rawBytes == null || rawBytes.length() < 2) {
-            return false;
+            return UsageType.TYPE_INVALID_BYTES;
         }
 
         if (!rawBytes.substring(rawBytes.length() - 1).equals("B")) {
-            return false;
+            return UsageType.TYPE_INVALID_BYTES;
         }
 
         int bytes;
         try {
             bytes = Integer.parseInt(rawBytes.substring(0, rawBytes.length() - 1));
         } catch (NumberFormatException e) {
-            return false;
+            return UsageType.TYPE_INVALID_BYTES;
         }
-        return !(bytes < 0 || bytes > 1000000);
+        if (bytes < 0) {
+            return UsageType.TYPE_TOO_FEW_BYTES;
+        } else if (bytes > 100000) {
+            return UsageType.TYPE_TOO_MANY_BYTES;
+        }
+        return null;
     }
 
     private boolean isPhoneValid(String rawPhone) {
@@ -430,29 +448,36 @@ public class StreamInputInterface extends BaseInterface {
             return UsageType.TYPE_INVALID_DATE;
         }
 
-        if (!isMegabytesValid(tokens[3])) {
-            return UsageType.TYPE_INVALID_FORMAT;
+        UsageType usageType = isMegabytesValid(tokens[3]);
+        if (usageType != null) {
+            return usageType;
         }
 
         return UsageType.TYPE_INTERNET;
     }
 
-    private boolean isMegabytesValid(String rawMegabytes) {
+    private UsageType isMegabytesValid(String rawMegabytes) {
         if (rawMegabytes == null || rawMegabytes.length() < 2) {
-            return false;
+            return UsageType.TYPE_INVALID_MEGABYTES;
         }
 
         if (!rawMegabytes.substring(rawMegabytes.length() - 2).equals("MB")) {
-            return false;
+            return UsageType.TYPE_INVALID_MEGABYTES;
         }
 
         int megabytes;
         try {
             megabytes = Integer.parseInt(rawMegabytes.substring(0, rawMegabytes.length() - 2));
         } catch (NumberFormatException e) {
-            return false;
+            return UsageType.TYPE_INVALID_MEGABYTES;
         }
-        return !(megabytes <= 0 || megabytes > 10000);
+
+        if (megabytes < 0) {
+            return UsageType.TYPE_TOO_FEW_MEGABYTES;
+        } else if (megabytes > 100000) {
+            return UsageType.TYPE_TOO_MANY_MEGABYTES;
+        }
+        return UsageType.TYPE_INTERNET;
     }
 
     private String[] getTextInformation(String sanitizedLine) {

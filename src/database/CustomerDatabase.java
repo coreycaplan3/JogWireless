@@ -117,7 +117,7 @@ public class CustomerDatabase {
             ArrayList<ColumnTypes> columnTypes = ResultSetHelper.makeColumnTypes(STRING, STRING, LONG);
             ResultSetHelper resultSetHelper = new ResultSetHelper(resultSet, columnNames, columnTypes);
             System.out.println("Here are the customers on your account:");
-            resultSetHelper.printResults(100);
+            resultSetHelper.printResults(40);
         } catch (SQLException e) {
             System.out.println("There was an error viewing the customers on your account.");
         }
@@ -206,8 +206,8 @@ public class CustomerDatabase {
             resultSet3.next();
             System.out.println("Here is the total usage information for the billing period you entered:");
             System.out.printf("%-30s %-30s %-30s\n", columnNames.get(0), columnNames.get(1), columnNames.get(2));
-            System.out.printf("%-30d %-30.2f %-30.2f\n", resultSet1.getInt(1), resultSet2.getDouble(1),
-                    resultSet3.getDouble(1));
+            System.out.printf("%-30d %-30.2f %-30.2f\n", resultSet1.getInt(columnNames.get(0)),
+                    resultSet2.getDouble(columnNames.get(1)), resultSet3.getDouble(columnNames.get(2)));
         } catch (SQLException e) {
             System.out.println("There was an error retrieving your usage information.");
         }
@@ -267,7 +267,7 @@ public class CustomerDatabase {
                 } else {
                     isPaid = "False";
                 }
-                System.out.printf("%-15s %-20s %-15s %-30s $%.2f\n", resultSet.getInt(Bill.A_ID), formattedDate, isPaid,
+                System.out.printf("%-15s %-20s %-15s %-30s $%-20.2f\n", resultSet.getInt(Bill.A_ID), formattedDate, isPaid,
                         resultSet.getString(Plans.P_NAME), resultSet.getDouble(Bill.ACCUMULATED_CHARGES));
                 System.out.println();
             }
