@@ -44,10 +44,24 @@ public class StreamInputInterface extends BaseInterface {
         Scanner scanner = new Scanner(System.in);
         while (true) {
             String fileName;
-            System.out.println("Enter a file name or -q to quit:");
+            System.out.println("Enter a file name, or -l to see the files in the \"usage\" directory. You may also " +
+                    "type -q to quit:");
             fileName = scanner.nextLine();
             if (fileName.equals("-q")) {
                 return true;
+            } else if (fileName.equals("-l")) {
+                File file = new File("usage/");
+                File[] files = file.listFiles();
+                if (files == null) {
+                    System.out.println("Sorry, there are no files in the directory!");
+                    continue;
+                }
+                System.out.println("Here are the files in the directory:");
+                for (File file1 : files) {
+                    System.out.println(file1.getName());
+                }
+                System.out.println();
+                continue;
             }
             fileName = "usage/" + fileName;
             BufferedReader bufferedReader = null;
@@ -58,10 +72,14 @@ public class StreamInputInterface extends BaseInterface {
             try {
                 inputFile = new FileReader(fileName);
                 bufferedReader = new BufferedReader(inputFile);
-                errorWriter = new FileWriter("usage/error.log", true);
-                databaseWriter = new FileWriter("usage/usage_information.log", true);
+                errorWriter = new FileWriter("usage/error.txt", true);
+                databaseWriter = new FileWriter("usage/usage_information.txt", true);
                 processFile(bufferedReader, databaseWriter, errorWriter);
                 System.out.println("Finished processing file!");
+                System.out.println("You may view a more detailed output of the successful operations in the " +
+                        "\"usage_information.txt\" file.");
+                System.out.println("You may view a more detailed output of the failed operations in the " +
+                        "\"error.txt\" file.");
                 System.out.println();
             } catch (FileNotFoundException e) {
                 System.out.println("Sorry, \"" + fileName + "\" could not be found. Please try again.");
