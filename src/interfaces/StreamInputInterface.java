@@ -152,6 +152,7 @@ public class StreamInputInterface extends BaseInterface {
                 printError(usageType, lineCount, line, errorWriter);
                 continue;
             } else {
+                //A comment
                 continue;
             }
             if (usageResult == UsageResult.SUCCESS) {
