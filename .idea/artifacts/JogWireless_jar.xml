@@ -1,9 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" build-on-make="true" name="JogWireless:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/JogWireless_jar</output-path>
-    <root id="archive" name="JogWireless.jar">
-      <element id="module-output" name="JogWireless" />
-      <element id="extracted-dir" path="$PROJECT_DIR$/ojdbc6.jar" path-in-jar="/" />
-    </root>
-  </artifact>
-</component>
